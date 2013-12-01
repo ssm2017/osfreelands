@@ -1,0 +1,362 @@
+<?php
+
+/**
+ * @package    osFreeLands
+ * @copyright Copyright (C) 2013 Wene - ssm2017 Binder ( S.Massiaux ). All rights reserved.
+ * @license   GNU/GPL, http://www.gnu.org/licenses/gpl-2.0.html
+ * osFreeLands is free software. This version may have been modified pursuant
+ * to the GNU General Public License, and as distributed it includes or
+ * is derivative of works licensed under the GNU General Public License or
+ * other free or open source software licenses.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function osfreelands_menu() {
+	$items = array();
+	$items['admin/config/metaverse-framework/osfreelands'] = array(
+		'title' => 'osFreeLands',
+		'description' => 'Settings for the osfreelands module.',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('osfreelands_settings'),
+		'access arguments' => array('administer site configuration'),
+		'type' => MENU_NORMAL_ITEM,
+	);
+	return $items;
+}
+
+/**
+ * Admin settings
+ */
+function osfreelands_settings() {
+	$form = array();
+	$form['osfreelands_password_fieldset'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('Password'),
+		'#collapsible' => FALSE,
+		'#collapsed' => FALSE,
+	);
+	$form['osfreelands_password_fieldset']['osfreelands_password'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Password.'),
+		'#default_value' => variable_get('osfreelands_password', '0000'),
+		'#description' => t("Enter the password to communicate with the boxes."),
+	);
+	$form['osfreelands_parcels_fieldset'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('Parcels'),
+		'#collapsible' => FALSE,
+		'#collapsed' => FALSE,
+	);
+	$form['osfreelands_parcels_fieldset']['osfreelands_max_parcels_per_user'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Max parcels per user.'),
+		'#size' => 4,
+		'#maxlength' => 4,
+		'#default_value' => variable_get('osfreelands_max_parcels_per_user', 1),
+		'#description' => t("Maximum quantity of parcels a single user can own."),
+	);
+	$form['osfreelands_parcels_fieldset']['osfreelands_renting_duration'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Renting duration.'),
+		'#size' => 3,
+		'#maxlength' => 3,
+		'#default_value' => variable_get('osfreelands_renting_duration', 0),
+		'#description' => t("Renting duration in days (0 means infinite)."),
+	);
+	return system_settings_form($form);
+}
+
+/**
+ * metaverse frameworkd dispatcher
+ */
+function osfreelands_dispatch($params) {
+	module_load_include('inworld', 'osfreelands', 'osfreelands');
+	$cmd = $params['cmd'];
+	$sl = &$params['sl'];
+	$args = $params['args'];
+	switch ($cmd) {
+		case 'save':
+			osfreelands_inworld_save($sl, $args);
+			break;
+		case 'check':
+			osfreelands_inworld_check($sl, $args);
+			break;
+		default:
+			$sl->response['status'] = FALSE;
+			$sl->response['message'] = "Oops! Unknown command: $cmd.";
+			break;
+	}
+}
+
+function osfreelands_get_messages() {
+	$output = "";
+	$messages = drupal_get_messages();
+	foreach($messages as $type) {
+		if (count($type)) {
+			foreach ($type as $message) {
+				$output .= $message . "\n";
+			}
+		}
+	}
+	return $output;
+}
+
+function osfreelands_check_uuid($uuid) {
+	if (preg_match("/^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/", $uuid)) {
+		return TRUE;
+	}
+	return FALSE;
+}
+
+function osfreelands_manage_parcels($terminal, $args) {
+	// get the parcels
+	if (isset($args['parcels']) && !empty($args['parcels'])) {
+		$parcels = drupal_json_decode(base64_decode($args['parcels']));
+		if (!is_array($parcels)) {
+			drupal_set_message(t('Error decoding parcels list.'), 'error');
+			return NULL;
+		}
+	}
+	else {
+		drupal_set_message(t('No parcels submitted.'), 'error');
+		return NULL;
+	}
+	$saved_parcels = array();
+	foreach ($parcels as $parcel) {
+		// check if uuid
+		if (!osfreelands_check_uuid($parcel[0])) {
+			drupal_set_message(t('Error with parcel uuid.'), 'error');
+			return NULL;
+		}
+		// fill values
+		$duration = variable_get('osfreelands_renting_duration', 0);
+		// uuid; location; size; name; description
+		$values = new stdclass();
+		$values->parcel_key = $parcel[0];
+		$values->parcel_location = isset($parcel[1]) ? $parcel[1] : "<128;128;128>";
+		$values->parcel_size = isset($parcel[2]) ? $parcel[2] : "0";
+		$values->parcel_name = isset($parcel[3]) ? $parcel[3] : "No name";
+		$values->parcel_description = isset($parcel[4]) ? $parcel[4] : "No desc";
+		$values->terminal_nid = $terminal->nid;
+		$values->parcel_status = 0;
+		$values->parcel_owner_key = $terminal->field_osfl_terminal_owner_key[LANGUAGE_NONE][0]['value'];
+		// get parcel by uuid
+		$parcels_nids = osfreelands_get_parcels_by_parcel_key(array('parcel_key' => $parcel[0]));
+		if (is_null($parcels_nids)) {
+			// create a new parcel
+			$values->end_time = ($duration > 0) ? date() + (86400 * $duration) : NULL;
+			$saved_parcel = osfreelands_save_parcel($values);
+			drupal_set_message(t('Parcel created'));
+		}
+		else {
+			// update parcel
+			$values->nid = $parcels_nids[0];
+			$saved_parcel = osfreelands_save_parcel($values, FALSE);
+			drupal_set_message(t('Parcel updated'));
+		}
+		$saved_parcels[] = $saved_parcel->nid;
+	}
+	// check if the terminal contains parcels
+	$terminal_parcels = osfreelands_get_parcels_by_terminal_nid(array('terminal_nid' => $terminal->nid));
+	if (count($terminal_parcels)) {
+		foreach ($terminal_parcels as $terminal_parcel) {
+			// check if parcel was saved (to delete old parcels)
+			if (!in_array($terminal_parcel, $saved_parcels)) {
+				node_delete($terminal_parcel);
+				drupal_set_message(t('Parcel deleted.'));
+			}
+		}
+	}
+	return $saved_parcels;
+}
+
+function osfreelands_save_parcel($values, $is_new = TRUE) {
+	if ($is_new) {
+		$node = new stdClass();
+		$node->type = 'freelands_parcel';
+		node_object_prepare($node);
+	}
+	else {
+		$node = node_load($values->nid);
+	}
+
+	$node->title = isset($values->parcel_name) ? $values->parcel_name : $node->title;
+	$node->language = LANGUAGE_NONE;
+
+	$node->body[$node->language][0]['value'] = isset($values->parcel_description) ? $values->parcel_description : $node->body[$node->language][0]['value'];
+	$node->body[$node->language][0]['summary'] = text_summary(isset($values->parcel_description) ? $values->parcel_description : $node->body[$node->language][0]['summary']);
+	$node->body[$node->language][0]['format'] = 'plain_text';
+
+	$node->field_osfl_parcel_key[$node->language][0]['value'] = isset($values->parcel_key) ? $values->parcel_key : $node->field_osfl_parcel_key[$node->language][0]['value'];
+	$node->field_osfl_terminal_nid[$node->language][0]['target_id'] = isset($values->terminal_nid) ? $values->terminal_nid : $node->field_osfl_terminal_nid[$node->language][0]['target_id'];
+	$node->field_osfl_parcel_status[$node->language][0]['value'] = isset($values->parcel_status) ? $values->parcel_status : $node->field_osfl_parcel_status[$node->language][0]['value'];
+	$node->field_osfl_parcel_owner_key[$node->language][0]['value'] = isset($values->parcel_owner_key) ? $values->parcel_owner_key : $node->field_osfl_parcel_owner_key[$node->language][0]['value'];
+	$node->field_osfl_parcel_location[$node->language][0]['value'] = isset($values->parcel_location) ? $values->parcel_location : $node->field_osfl_parcel_location[$node->language][0]['value'];
+	$node->field_osfl_parcel_size[$node->language][0]['value'] = isset($values->parcel_size) ? $values->parcel_size : $node->field_osfl_parcel_size[$node->language][0]['value'];
+	$node->field_osfl_end_time[$node->language][0]['value'] = isset($values->end_time) ? $values->end_time : isset($node->field_osfl_end_time[$node->language][0]['value']) ? $node->field_osfl_end_time[$node->language][0]['value'] : NULL;
+
+	node_save($node);
+	return $node;
+}
+
+function osfreelands_get_parcels_by_terminal_nid($values) {
+	$query = new EntityFieldQuery();
+	$entities = $query->entityCondition('entity_type', 'node')
+			->propertyCondition('type', 'freelands_parcel')
+			->fieldCondition('field_osfl_terminal_nid', 'target_id', $values['terminal_nid'])
+			->execute();
+	if (isset($entities['node'])) {
+		$nodes_ids = array();
+		foreach ($entities['node'] as $n) {
+			$nodes_ids[] = $n->nid;
+		}
+		// get the nodes
+		return $nodes_ids;
+	}
+	return NULL;
+}
+
+function osfreelands_get_parcels_by_parcel_key($values) {
+	$query = new EntityFieldQuery();
+	$entities = $query->entityCondition('entity_type', 'node')
+			->propertyCondition('type', 'freelands_parcel')
+			->fieldCondition('field_osfl_parcel_key', 'value', $values['parcel_key'])
+			->execute();
+	if (isset($entities['node'])) {
+		$nodes_ids = array();
+		foreach ($entities['node'] as $n) {
+			$nodes_ids[] = $n->nid;
+		}
+		// get the nodes
+		return $nodes_ids;
+	}
+	return NULL;
+}
+
+function osfreelands_get_parcels_by_parcel_nid($values) {
+	$query = new EntityFieldQuery();
+	$entities = $query->entityCondition('entity_type', 'node')
+			->propertyCondition('type', 'freelands_parcel')
+			->propertyCondition('nid', $values['nid'])
+			->execute();
+	if (isset($entities['node'])) {
+		$nodes_ids = array();
+		foreach ($entities['node'] as $n) {
+			$nodes_ids[] = $n->nid;
+		}
+		// get the nodes
+		return $nodes_ids;
+	}
+	return NULL;
+}
+
+function osfreelands_manage_terminal($values) {
+	// check if the terminal exists
+	$terminals = osfreelands_get_terminals_by_key(array('terminal_key' => $values->objectkey));
+
+	if (is_null($terminals)) {
+		drupal_set_message(t('no terminals found by id'));
+		// check if there is already a terminal on this region
+		$terminals = osfreelands_get_terminals_by_region(array('owner_key' => $values->ownerkey, 'region_name' => $values->region_name));
+		if (!is_null($terminals)) {
+			drupal_set_message(t('!qty terminals found by region', array('!qty' => count($terminals))));
+			// delete terminals
+			osfreelands_delete_terminals($terminals);
+			$terminals = NULL;
+			drupal_set_message(t('terminals deleted'));
+		}
+	}
+	else {
+		if (count($terminals) > 1) {
+			// delete terminals
+			osfreelands_delete_terminals($terminals);
+			$terminals = NULL;
+			drupal_set_message(t('terminals deleted'));
+		}
+		else {
+			// update terminal
+			$values->nid = $terminals[0];
+			$terminal = osfreelands_save_terminal($values, FALSE);
+			drupal_set_message(t('terminal updated'));
+		}
+	}
+	if (is_null($terminals)) {
+		// create a new terminal
+		$terminal = osfreelands_save_terminal($values);
+		drupal_set_message(t('terminal created'));
+	}
+	return $terminal;
+}
+
+function osfreelands_delete_terminals($terminals_nids) {
+	foreach ($terminals_nids as $terminal_nid) {
+		// delete parcels
+		$parcels_nids = osfreelands_get_parcels_by_terminal_nid(array('terminal_nid' => $terminal_nid));
+		if (!is_null($parcels_nids)) {
+			node_delete_multiple($parcels_nids);
+		}
+	}
+	// delete terminals
+	node_delete_multiple($terminals_nids);
+}
+
+function osfreelands_save_terminal($values, $is_new = TRUE) {
+	if ($is_new) {
+		$node = new stdClass();
+		$node->type = 'freelands_terminal';
+		node_object_prepare($node);
+	}
+	else {
+		$node = node_load($values->nid);
+	}
+
+	$node->title = $values->objectname;
+	$node->language = LANGUAGE_NONE;
+
+	$node->body[$node->language][0]['value'] = '';
+	$node->body[$node->language][0]['summary'] = text_summary('');
+	$node->body[$node->language][0]['format'] = 'plain_text';
+
+	$node->field_osfl_terminal_key[$node->language][0]['value'] = $values->objectkey;
+	$node->field_osfl_terminal_owner_key[$node->language][0]['value'] = $values->ownerkey;
+	$node->field_osfl_region_name[$node->language][0]['value'] = $values->region_name;
+
+	node_save($node);
+	return $node;
+}
+
+function osfreelands_get_terminals_by_key($values) {
+	$query = new EntityFieldQuery();
+	$entities = $query->entityCondition('entity_type', 'node')
+			->propertyCondition('type', 'freelands_terminal')
+			->fieldCondition('field_osfl_terminal_key', 'value', $values['terminal_key'])
+			->execute();
+	if (isset($entities['node'])) {
+		$nodes_ids = array();
+		foreach ($entities['node'] as $n) {
+			$nodes_ids[] = $n->nid;
+		}
+		// get the nodes
+		return $nodes_ids;
+	}
+	return NULL;
+}
+
+function osfreelands_get_terminals_by_region($values) {
+	$query = new EntityFieldQuery();
+	$entities = $query->entityCondition('entity_type', 'node')
+			->propertyCondition('type', 'freelands_terminal')
+			->fieldCondition('field_osfl_terminal_owner_key', 'value', $values['owner_key'])
+			->fieldCondition('field_osfl_region_name', 'value', $values['region_name'])
+			->execute();
+	if (isset($entities['node'])) {
+		$nodes_ids = array();
+		foreach ($entities['node'] as $n) {
+			$nodes_ids[] = $n->nid;
+		}
+		return $nodes_ids;
+	}
+	return NULL;
+}

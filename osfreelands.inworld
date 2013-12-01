@@ -1,0 +1,33 @@
+<?php
+
+/**
+ * @package    osFreeLands
+ * @copyright Copyright (C) 2013 Wene - ssm2017 Binder ( S.Massiaux ). All rights reserved.
+ * @license   GNU/GPL, http://www.gnu.org/licenses/gpl-2.0.html
+ * osFreeLands is free software. This version may have been modified pursuant
+ * to the GNU General Public License, and as distributed it includes or
+ * is derivative of works licensed under the GNU General Public License or
+ * other free or open source software licenses.
+ */
+
+function osfreelands_inworld_save(&$sl, $args) {
+	$terminal = osfreelands_manage_terminal($sl);
+	if (is_null($terminal)) {
+		$sl->response['status'] = FALSE;
+		$sl->response['message'] = 'error;'. osfreelands_get_messages();
+		return;
+	}
+	$parcels = osfreelands_manage_parcels($terminal, $args);
+	if (is_null($parcels)) {
+		$sl->response['status'] = FALSE;
+		$sl->response['message'] = 'error;'. osfreelands_get_messages();
+		return;
+	}
+  $sl->response['status'] = TRUE;
+  $sl->response['message'] = osfreelands_get_messages();
+}
+
+function osfreelands_inworld_check(&$sl, $args) {
+  $sl->response['status'] = FALSE;
+  $sl->response['message'] = "ok";
+}

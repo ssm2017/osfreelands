@@ -1,0 +1,8 @@
+name = osfreelands
+description = "Manage free lands for OpenSimulator"
+package = Metaverse
+dependencies[] = metaverse_framework
+dependencies[] = entityreference
+dependencies[] = list
+dependencies[] = date
+core = 7.x
