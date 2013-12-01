@@ -118,6 +118,9 @@ function osfreelands_manage_parcels($terminal, $args) {
 			drupal_set_message(t('Error decoding parcels list.'), 'error');
 			return NULL;
 		}
+		metaverse_framework_debug("-----------------------------");
+	  metaverse_framework_debug("parcels : ". print_r($parcels, true));
+	  metaverse_framework_debug("-----------------------------");
 	}
 	else {
 		drupal_set_message(t('No parcels submitted.'), 'error');

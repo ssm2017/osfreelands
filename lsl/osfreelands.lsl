@@ -76,7 +76,7 @@ updateBox(string cmd, string args) {
     integer keypass = (integer)llFrand(9999)+1;
     string md5pass = llMD5String(password, keypass);
     // sending values
-    updateBoxId = llHTTPRequest( url+"/mvtf", [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"],
+    updateBoxId = llHTTPRequest( url+"/metaverse-framework", [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"],
                     "app=osfreelands"
                     +"&cmd="+ cmd
                     +"&output_type="+outputType
@@ -102,6 +102,33 @@ getServerAnswer(integer status, string body) {
         llOwnerSay(_SYMBOL_WARNING+ " "+ (string)status+ " "+ _INTERNET_EXPLODED);
         llOwnerSay(body);
     }
+}
+// parsing
+string parseParcels() {
+    // output example : [["550e8400-e29b-41d4-a716-446655440000","<127,127,127>","4096", "name1","desc1"],["550e8400-e29b-41d4-a716-446655440001","<127,127,127>","4096","name2","desc2"],["550e8400-e29b-41d4-a716-446655440002","<127,127,127>","4096","name3","desc3"]]
+    integer i;
+    list details;
+    string position;
+    string temp = "[";
+    integer length = llGetListLength(parcels);
+    do {
+        // get parcels details
+        position = llList2String(parcels, i);
+        details = llGetParcelDetails(position, [PARCEL_DETAILS_ID, PARCEL_DETAILS_AREA, PARCEL_DETAILS_NAME, PARCEL_DETAILS_DESC]);
+        temp += "["
+            + llList2String(details, 0) + ","
+            + position + ","
+            + llList2String(details, 1) + ","
+            + llList2String(details, 2) + ","
+            + llList2String(details, 3) + "]";
+        if (i < (length-1)) {
+            temp += ",";
+        }
+    }
+    while(++i < length);
+    temp += "]";
+    llOwnerSay(temp);
+    return llStringToBase64(temp);
 }
 // ***********************
 //  INIT PROGRAM
@@ -263,7 +290,7 @@ state updateWebsite {
 
     state_entry() {
         llSetText(_UPDATING_BOX, <1.0,1.0,0.0>,1);
-        updateBox("init", "");
+        updateBox("save", "parcels="+parseParcels());
     }
 
     touch_start(integer number) {
