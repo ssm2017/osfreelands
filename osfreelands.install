@@ -89,6 +89,19 @@ function _osfreelands_installed_fields($node_type) {
 						'max_length' => 40
 					)
 				),
+				// terminal_url
+				'osfl_terminal_url' => array(
+					'field_name' => 'field_osfl_terminal_url',
+					'type' => 'text',
+					'module' => 'text',
+					'active' => 1,
+					'locked' => 1,
+					'cardinality' => 1,
+					'deleted' => 0,
+					'settings' => array(
+						'max_length' => 255
+					)
+				),
 				// owner_key
 				'osfl_terminal_owner_key' => array(
 					'field_name' => 'field_osfl_terminal_owner_key',
@@ -265,6 +278,24 @@ function _osfreelands_installed_instances($node_type) {
 						)
 					)
 				),
+				// terminal url
+				'osfl_terminal_url' => array(
+					'field_name' => 'field_osfl_terminal_url',
+					'label' => t('Terminal url'),
+					'required' => TRUE,
+					'widget' => array(
+						'type' => 'text_textfield',
+						'module' => 'text',
+					),
+					'display' => array(
+						'default' => array(
+							'type'   => 'hidden'
+						),
+						'teaser' => array(
+							'type'   => 'hidden'
+						),
+					),
+				),
 				// owner key
 				'osfl_terminal_owner_key' => array(
 					'field_name' => 'field_osfl_terminal_owner_key',
@@ -305,7 +336,7 @@ function _osfreelands_installed_instances($node_type) {
 						)
 					)
 				),
-				// terminal
+				// terminal nid
 				'osfl_terminal_nid' => array(
 					'field_name' => 'field_osfl_terminal_nid',
 					'label' => t('Terminal'),
