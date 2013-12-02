@@ -5,9 +5,10 @@
 // osfreelands is free software and parts of it may contain or be derived from the
 // GNU General Public License or other free or open source software licenses.
 
-string url="http://www.beta.francogrid.org";
-string password = "0000";
-integer website_refresh_time = 3600;
+// Optionnal variables
+key default_owner;
+string default_title = "Free land";
+string default_desc = "This place is for free";
 // *********************************
 //      STRINGS
 // *********************************
@@ -36,72 +37,42 @@ string _MISSING_VARS = "Missing vars";
 string _START_READING_CONFIG = "Starting reading config";
 string _SET_TO = "is set to";
 string _CONFIG_READ = "Config read";
-// http request
-string _REQUESTING_URL = "Requesting the url";
-string _URL_SUCCESS = "Url request success";
-string _URL_ERROR = "Url request error";
-// box
-string _UPDATING_BOX = "Updating box";
-string _UPDATE_ERROR = "Update error";
-// http errors
-string _REQUEST_TIMED_OUT = "Request timed out";
-string _FORBIDDEN_ACCESS = "Forbidden access";
-string _PAGE_NOT_FOUND = "Page not found";
-string _INTERNET_EXPLODED = "the internet exploded!!";
-string _SERVER_ERROR = "Server error";
+
 // ============================================================
 //      NOTHING SHOULD BE MODIFIED UNDER THIS LINE
 // ============================================================
 string PARAM_SEPARATOR = "||";
 key owner;
-key default_owner;
-string default_title = "Free land";
-string default_desc = "This place is for free";
 list parcels = [];
 // notecard vars
 integer i_line;
 key config_notecard;
-// *********************************
+// ********************
+//      Constants
+// ********************
+// common
+integer RESET = 70000;
+integer SET_ERROR = 70016;
+// http
+integer HTTP_REQUEST_GET_URL = 70064;
+// notecard
+integer READ_NOTECARD = 70063;
+// *********************
 //      FUNCTIONS
-// *********************************
-// update server
-string box_url = "";
-string outputType = "message";
-key updateBoxId;
-updateBox(string cmd, string args) {
+// *********************
+// reset
+reset() {
     llOwnerSay(_SYMBOL_HOR_BAR_2);
-    llOwnerSay(_SYMBOL_ARROW+ " "+ _UPDATING_BOX);
-
-    // building password
-    integer keypass = (integer)llFrand(9999)+1;
-    string md5pass = llMD5String(password, keypass);
-    // sending values
-    updateBoxId = llHTTPRequest( url+"/metaverse-framework", [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"],
-                    "app=osfreelands"
-                    +"&cmd="+ cmd
-                    +"&output_type="+outputType
-                    +"&arg="+args
-                    );
+    llOwnerSay(_SYMBOL_RESTART+ " "+ _RESET);
+    llMessageLinked(LINK_SET, RESET, "", NULL_KEY);
+    llResetScript();
 }
-// get server answer
-getServerAnswer(integer status, string body) {
-    llOwnerSay(_SYMBOL_HOR_BAR_2);
-    if (status == 499) {
-        llOwnerSay(_SYMBOL_WARNING+ " "+ (string)status+ " "+ _REQUEST_TIMED_OUT);
-    }
-    else if (status == 403) {
-        llOwnerSay(_SYMBOL_WARNING+ " "+ (string)status+ " "+ _FORBIDDEN_ACCESS);
-    }
-    else if (status == 404) {
-        llOwnerSay(_SYMBOL_WARNING+ " "+ (string)status+ " "+ _PAGE_NOT_FOUND);
-    }
-    else if (status == 500) {
-        llOwnerSay(_SYMBOL_WARNING+ " "+ (string)status+ " "+ _SERVER_ERROR);
-    }
-    else if (status != 403 && status != 404 && status != 500) {
-        llOwnerSay(_SYMBOL_WARNING+ " "+ (string)status+ " "+ _INTERNET_EXPLODED);
-        llOwnerSay(body);
-    }
+// error
+error(string message) {
+    llOwnerSay(_SYMBOL_WARNING+ " "+ message + "."+ _THE_SCRIPT_WILL_STOP);
+    llSetText(message, <1.0,0.0,0.0>,1);
+    llMessageLinked(LINK_SET, SET_ERROR, "", NULL_KEY);
+    state error;
 }
 // parsing
 string parseParcels() {
@@ -135,45 +106,34 @@ string parseParcels() {
 // ***********************
 default {
     on_rez(integer number) {
-        llOwnerSay(_SYMBOL_HOR_BAR_2);
-        llOwnerSay(_SYMBOL_RESTART+ " "+ _RESET);
-        llResetScript();
+        reset();
     }
 
     state_entry() {
         owner = llGetOwner();
         default_owner = owner;
-        llSetText(_REQUESTING_URL, <1.0,1.0,0.0>,1);
-        llRequestURL();
+        llMessageLinked(LINK_THIS, HTTP_REQUEST_GET_URL, "", NULL_KEY);
     }
 
     touch_start(integer total_number) {
         if (llDetectedKey(0) == owner) {
-            llOwnerSay(_SYMBOL_HOR_BAR_2);
-            llOwnerSay(_SYMBOL_RESTART+ " "+ _RESET);
-            llResetScript();
+            reset();
         }
     }
 
     changed(integer change) {
         if (change & CHANGED_INVENTORY) {
             llOwnerSay(_SYMBOL_ARROW+ " "+ _INVENTORY_HAS_CHANGED);
-            llOwnerSay(_SYMBOL_RESTART+ " "+ _RESET);
-            llResetScript();
+            reset();
         }
     }
 
-    http_request(key ID, string Method, string Body) {
-        if (Method == URL_REQUEST_GRANTED) {
-            box_url = Body;
-            llOwnerSay(_URL_SUCCESS+" : "+Body);
-            llSetText(_URL_SUCCESS, <0.0,1.0,0.0>,1);
-            state readNotecard;
+    link_message(integer sender_num, integer num, string str, key id) {
+        if (num == SET_ERROR) {
+            state error;
         }
-        else if (Method == URL_REQUEST_DENIED) {
-            llOwnerSay(_SYMBOL_WARNING+ " "+ _URL_ERROR + "."+ _THE_SCRIPT_WILL_STOP);
-            llSetText(_URL_ERROR, <1.0,0.0,0.0>,1);
-            return;
+        else if (num == READ_NOTECARD) {
+            state readNotecard;
         }
     }
 }
@@ -182,18 +142,13 @@ default {
 // *************************
 state readNotecard {
     on_rez(integer change) {
-        llOwnerSay(_SYMBOL_HOR_BAR_2);
-        llOwnerSay(_SYMBOL_RESTART+ " "+ _RESET);
-        llResetScript();
+        reset();
     }
 
     state_entry() {
         // check if the notecard exists
         if (llGetInventoryType("config") != INVENTORY_NOTECARD) {
-            llOwnerSay(_SYMBOL_WARNING+ " "+ _MISSING_NOTECARD+ " : config");
-            llOwnerSay(_SYMBOL_ARROW+ " "+ _THE_SCRIPT_WILL_STOP);
-            llSetText(_MISSING_NOTECARD+ " : config", <1.0,0.0,0.0>,1);
-            return;
+            error(_MISSING_NOTECARD + " : config");
         }
         // read the config notecard
         i_line=0;
@@ -205,17 +160,14 @@ state readNotecard {
 
     touch_start(integer number) {
         if ( llDetectedKey(0) == owner ) {
-            llOwnerSay(_SYMBOL_HOR_BAR_2);
-            llOwnerSay(_SYMBOL_RESTART+ " "+ _RESET);
-            llResetScript();
+            reset();
         }
     }
 
     changed(integer change) {
         if (change & CHANGED_INVENTORY) {
             llOwnerSay(_SYMBOL_ARROW+ " "+ _INVENTORY_HAS_CHANGED);
-            llOwnerSay(_SYMBOL_RESTART+ " "+ _RESET);
-            llResetScript();
+            reset();
         }
     }
 
@@ -259,74 +211,10 @@ state readNotecard {
                     llOwnerSay(_SYMBOL_WARNING+ " "+ _MISSING_VAR_NAMED+ " \"parcel\"");
                     check = 0;
                 }
-                if ( url == "" ) {
-                    llOwnerSay(_SYMBOL_WARNING+ " "+ _MISSING_VAR_NAMED+ " \"url\"");
-                    check = 0;
-                }
-                if ( password == "" ) {
-                    llOwnerSay(_SYMBOL_WARNING+ " "+ _MISSING_VAR_NAMED+ " \"password\"");
-                    check = 0;
-                }
                 if (!check) {
-                    llOwnerSay(_SYMBOL_ARROW+ " "+ _THE_SCRIPT_WILL_STOP);
-                    llSetText(_MISSING_VARS, <1.0,0.0,0.0>,1);
-                    return;
+                    error(_MISSING_VARS);
                 }
-                state updateWebsite;
-            }
-        }
-    }
-}
-
-// *************************
-//      UPDATE WEBSITE
-// *************************
-state updateWebsite {
-    on_rez(integer change) {
-        llOwnerSay(_SYMBOL_HOR_BAR_2);
-        llOwnerSay(_SYMBOL_RESTART+ " "+ _RESET);
-        llResetScript();
-    }
-
-    state_entry() {
-        llSetText(_UPDATING_BOX, <1.0,1.0,0.0>,1);
-        updateBox("save", "parcels="+parseParcels());
-    }
-
-    touch_start(integer number) {
-        if ( llDetectedKey(0) == owner ) {
-            llOwnerSay(_SYMBOL_HOR_BAR_2);
-            llOwnerSay(_SYMBOL_RESTART+ " "+ _RESET);
-            llResetScript();
-        }
-    }
-
-    changed(integer change) {
-        if (change & CHANGED_INVENTORY) {
-            llOwnerSay(_SYMBOL_ARROW+ " "+ _INVENTORY_HAS_CHANGED);
-            llOwnerSay(_SYMBOL_RESTART+ " "+ _RESET);
-            llResetScript();
-        }
-    }
-
-    http_response(key request_id, integer status, list metadata, string body) {
-        if ( status != 200 ) {
-            getServerAnswer(status, body);
-        }
-        else {
-            body = llStringTrim( body , STRING_TRIM);
-            list data = llParseString2List(body, [";"],[]);
-            string command = llList2String(data,0);
-            llOwnerSay(_SYMBOL_HOR_BAR_2);
-            if ( command == "success" ) {
-                llOwnerSay(_SYMBOL_ARROW+ " "+ llList2String(data,1));
-                state run;
-            }
-            else {
-                llOwnerSay(body);
-                llOwnerSay(_SYMBOL_ARROW+ " "+ _THE_SCRIPT_WILL_STOP);
-                llSetText(_UPDATE_ERROR, <1.0,0.0,0.0>,1);
-                return;
+                //state updateWebsite;
             }
         }
     }
@@ -337,9 +225,7 @@ state updateWebsite {
 // ************
 state run {
     on_rez(integer change) {
-        llOwnerSay(_SYMBOL_HOR_BAR_2);
-        llOwnerSay(_SYMBOL_RESTART+ " "+ _RESET);
-        llResetScript();
+        reset();
     }
 
     state_entry() {
@@ -348,17 +234,29 @@ state run {
 
     touch_start(integer number) {
         if ( llDetectedKey(0) == owner ) {
-            llOwnerSay(_SYMBOL_HOR_BAR_2);
-            llOwnerSay(_SYMBOL_RESTART+ " "+ _RESET);
-            llResetScript();
+            reset();
         }
     }
 
     changed(integer change) {
         if (change & CHANGED_INVENTORY) {
             llOwnerSay(_SYMBOL_ARROW+ " "+ _INVENTORY_HAS_CHANGED);
-            llOwnerSay(_SYMBOL_RESTART+ " "+ _RESET);
-            llResetScript();
+            reset();
+        }
+    }
+}
+
+// **************
+//      Error
+// **************
+state error {
+    on_rez(integer change) {
+        reset();
+    }
+
+    touch_start(integer number) {
+        if ( llDetectedKey(0) == owner ) {
+            reset();
         }
     }
 }

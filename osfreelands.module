@@ -77,6 +77,9 @@ function osfreelands_dispatch($params) {
 	$sl = &$params['sl'];
 	$args = $params['args'];
 	switch ($cmd) {
+		case 'save_terminal':
+			osfreelands_inworld_save_terminal($sl, $args);
+			break;
 		case 'save':
 			osfreelands_inworld_save($sl, $args);
 			break;
@@ -305,7 +308,7 @@ function osfreelands_delete_terminals($terminals_nids) {
 	node_delete_multiple($terminals_nids);
 }
 
-function osfreelands_save_terminal($values, $is_new = TRUE) {
+function osfreelands_save_terminal($values, $args = array(), $is_new = TRUE) {
 	if ($is_new) {
 		$node = new stdClass();
 		$node->type = 'freelands_terminal';
@@ -315,6 +318,15 @@ function osfreelands_save_terminal($values, $is_new = TRUE) {
 		$node = node_load($values->nid);
 	}
 
+	$node->uid = 1;
+
+	if (module_exists('d4os_ui_users')) {
+		// get the uid of the terminal owner
+		$uid = db_query("SELECT uid FROM {d4os_ui_users} WHERE UUID = :uuid", array(':uuid' => $values->ownerkey))->fetchField();
+		if ($uid !== FALSE && !is_null($uid)) {
+			$node->uid = $uid;
+		}
+	}
 	$node->title = $values->objectname;
 	$node->language = LANGUAGE_NONE;
 
@@ -323,6 +335,9 @@ function osfreelands_save_terminal($values, $is_new = TRUE) {
 	$node->body[$node->language][0]['format'] = 'plain_text';
 
 	$node->field_osfl_terminal_key[$node->language][0]['value'] = $values->objectkey;
+	if (isset($args['terminal_url'])) {
+		$node->field_osfl_terminal_url[$node->language][0]['value'] = base64_decode($args['terminal_url']);
+	}
 	$node->field_osfl_terminal_owner_key[$node->language][0]['value'] = $values->ownerkey;
 	$node->field_osfl_region_name[$node->language][0]['value'] = $values->region_name;
 
