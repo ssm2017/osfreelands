@@ -57,6 +57,8 @@ integer SET_ERROR = 70016;
 integer HTTP_REQUEST_GET_URL = 70064;
 // notecard
 integer READ_NOTECARD = 70063;
+// regions
+integer SET_PARCELS_LIST = 71011;
 // *********************
 //      FUNCTIONS
 // *********************
@@ -72,26 +74,16 @@ error(string message) {
     llOwnerSay(_SYMBOL_WARNING+ " "+ message + "."+ _THE_SCRIPT_WILL_STOP);
     llSetText(message, <1.0,0.0,0.0>,1);
     llMessageLinked(LINK_SET, SET_ERROR, "", NULL_KEY);
-    state error;
 }
 // parsing
 string parseParcels() {
-    // output example : [["550e8400-e29b-41d4-a716-446655440000","<127,127,127>","4096", "name1","desc1"],["550e8400-e29b-41d4-a716-446655440001","<127,127,127>","4096","name2","desc2"],["550e8400-e29b-41d4-a716-446655440002","<127,127,127>","4096","name3","desc3"]]
-    integer i;
-    list details;
-    string position;
+    // output example : [["<127,127,127>","<127,127,127>","<127,127,127>"]]
     string temp = "[";
+    integer i;
     integer length = llGetListLength(parcels);
     do {
         // get parcels details
-        position = llList2String(parcels, i);
-        details = llGetParcelDetails(position, [PARCEL_DETAILS_ID, PARCEL_DETAILS_AREA, PARCEL_DETAILS_NAME, PARCEL_DETAILS_DESC]);
-        temp += "["
-            + llList2String(details, 0) + ","
-            + position + ","
-            + llList2String(details, 1) + ","
-            + llList2String(details, 2) + ","
-            + llList2String(details, 3) + "]";
+        temp += "\""+llList2String(parcels, i)+"\"";
         if (i < (length-1)) {
             temp += ",";
         }
@@ -130,7 +122,7 @@ default {
 
     link_message(integer sender_num, integer num, string str, key id) {
         if (num == SET_ERROR) {
-            state error;
+            state idle;
         }
         else if (num == READ_NOTECARD) {
             state readNotecard;
@@ -149,6 +141,7 @@ state readNotecard {
         // check if the notecard exists
         if (llGetInventoryType("config") != INVENTORY_NOTECARD) {
             error(_MISSING_NOTECARD + " : config");
+            state idle;
         }
         // read the config notecard
         i_line=0;
@@ -213,8 +206,9 @@ state readNotecard {
                 }
                 if (!check) {
                     error(_MISSING_VARS);
+                    state idle;
                 }
-                //state updateWebsite;
+                llMessageLinked(LINK_SET, SET_PARCELS_LIST, parseParcels(), NULL_KEY);
             }
         }
     }
@@ -249,7 +243,7 @@ state run {
 // **************
 //      Error
 // **************
-state error {
+state idle {
     on_rez(integer change) {
         reset();
     }

@@ -10,29 +10,23 @@
  * other free or open source software licenses.
  */
 
-function osfreelands_inworld_save(&$sl, $args) {
-	$terminal = osfreelands_manage_terminal($sl);
-	if (is_null($terminal)) {
-		$sl->response['status'] = FALSE;
-		$sl->response['message'] = 'error;'. osfreelands_get_messages();
-		return;
-	}
-	$parcels = osfreelands_manage_parcels($terminal, $args);
-	if (is_null($parcels)) {
-		$sl->response['status'] = FALSE;
-		$sl->response['message'] = 'error;'. osfreelands_get_messages();
-		return;
-	}
-  $sl->response['status'] = TRUE;
-  $sl->response['message'] = osfreelands_get_messages();
-}
-
-function osfreelands_inworld_check(&$sl, $args) {
-  $sl->response['status'] = FALSE;
-  $sl->response['message'] = "ok";
-}
-
 function osfreelands_inworld_save_terminal (&$sl, $args) {
+	// check if the terminal url is answering
+	if (isset($args['terminal_url'])) {
+		$response = osfreelands_http_request(base64_decode($args['terminal_url']). 'ping');
+		if ($response->code != 200 || $response->data != 'pong') {
+			drupal_set_message(t('Terminal is not answering : !error ', array('!error' => $response->message)));
+			$sl->response['status'] = FALSE;
+			$sl->response['message'] = "error;". osfreelands_get_messages();
+			return;
+		}
+	}
+	else {
+		drupal_set_message(t('No url given.'));
+		$sl->response['status'] = FALSE;
+		$sl->response['message'] = "error;". osfreelands_get_messages();
+		return;
+	}
 	// check if the terminal exists
 	$terminals = osfreelands_get_terminals_by_key(array('terminal_key' => $sl->objectkey));
 

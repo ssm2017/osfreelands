@@ -33,6 +33,7 @@ string _UPDATE_ERROR = "Update error";
 string _REQUESTING_URL = "Requesting the url";
 string _URL_SUCCESS = "Url request success";
 string _URL_ERROR = "Url request error";
+string _PING_REQUESTED = "Ping requested";
 // http errors
 string _HTTP_ERROR = "http error";
 string _REQUEST_TIMED_OUT = "Request timed out";
@@ -43,6 +44,8 @@ string _SERVER_ERROR = "Server error";
 // ============================================================
 //      NOTHING SHOULD BE MODIFIED UNDER THIS LINE
 // ============================================================
+string terminal_url = "";
+string parcels = "";
 // ********************
 //      Constants
 // ********************
@@ -54,6 +57,8 @@ integer HTTP_REQUEST_GET_URL = 70064;
 integer HTTP_REQUEST_URL_SUCCESS = 70065;
 // notecard
 integer READ_NOTECARD = 70063;
+// parcels
+integer SET_PARCELS_LIST = 71011;
 // *********************
 //      FUNCTIONS
 // *********************
@@ -63,96 +68,36 @@ idle(string message) {
     llSetText(message, <1.0,0.0,0.0>,1);
     llMessageLinked(LINK_SET, SET_ERROR, "", NULL_KEY);
 }
-// update server
-string terminal_url = "";
-string outputType = "message";
-key updateTerminalId;
-updateTerminal(string cmd, string args) {
-    llOwnerSay(_SYMBOL_HOR_BAR_2);
-    llOwnerSay(_SYMBOL_ARROW+ " "+ _UPDATING_TERMINAL);
-
-    // building password
-    integer keypass = (integer)llFrand(9999)+1;
-    string md5pass = llMD5String(password, keypass);
-    // sending values
-    updateTerminalId = llHTTPRequest( url+"/metaverse-framework", [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"],
-                    "app=osfreelands"
-                    +"&cmd="+ cmd
-                    +"&output_type="+outputType
-                    +"&arg="+args
-                    );
-}
-// get server answer
-getServerAnswer(integer status, string body) {
-    llOwnerSay(_SYMBOL_HOR_BAR_2);
-    if (status == 499) {
-        llOwnerSay(_SYMBOL_WARNING+ " "+ (string)status+ " "+ _REQUEST_TIMED_OUT);
-    }
-    else if (status == 403) {
-        llOwnerSay(_SYMBOL_WARNING+ " "+ (string)status+ " "+ _FORBIDDEN_ACCESS);
-    }
-    else if (status == 404) {
-        llOwnerSay(_SYMBOL_WARNING+ " "+ (string)status+ " "+ _PAGE_NOT_FOUND);
-    }
-    else if (status == 500) {
-        llOwnerSay(_SYMBOL_WARNING+ " "+ (string)status+ " "+ _SERVER_ERROR);
-    }
-    else if (status != 403 && status != 404 && status != 500) {
-        llOwnerSay(_SYMBOL_WARNING+ " "+ (string)status+ " "+ _INTERNET_EXPLODED);
-        llOwnerSay(body);
-    }
-}
 // ***********************
 //  INIT PROGRAM
 // ***********************
 default {
 
-    state_entry() {
-        integer check = 1;
-        if ( url == "" ) {
-            llOwnerSay(_SYMBOL_WARNING+ " "+ _MISSING_VAR_NAMED+ " \"url\"");
-            check = 0;
-        }
-        if ( password == "" ) {
-            llOwnerSay(_SYMBOL_WARNING+ " "+ _MISSING_VAR_NAMED+ " \"password\"");
-            check = 0;
-        }
-        if (!check) {
-            idle(_MISSING_VARS);
-            state idle;
-        }
-    }
-
     link_message(integer sender_num, integer num, string str, key id) {
         if (num == RESET) {
             llResetScript();
         }
-        else if (num == HTTP_REQUEST_URL_SUCCESS) {
-            terminal_url = str;
-            updateTerminal("save_terminal", "terminal_url="+llStringToBase64(terminal_url));
+        else if (num == HTTP_REQUEST_GET_URL) {
+            llOwnerSay(_SYMBOL_ARROW+ " "+ _REQUESTING_URL);
+            llSetText(_REQUESTING_URL, <1.0,1.0,0.0>,1);
+            llRequestURL();
+        }
+        else if (num == SET_PARCELS_LIST) {
+            parcels = str;
         }
     }
 
-    http_response(key request_id, integer status, list metadata, string body) {
-        if ( status != 200 ) {
-            getServerAnswer(status, body);
-            idle(_HTTP_ERROR);
-            state idle;
+    http_request(key ID, string Method, string Body) {
+        if (Method == URL_REQUEST_GRANTED) {
+            terminal_url = Body;
+            llOwnerSay(_URL_SUCCESS+" : "+Body);
+            llSetText(_URL_SUCCESS, <0.0,1.0,0.0>,1);
+            llMessageLinked(LINK_SET, HTTP_REQUEST_URL_SUCCESS, terminal_url, NULL_KEY);
+            state run;
         }
-        else {
-            body = llStringTrim( body , STRING_TRIM);
-            list data = llParseString2List(body, [";"],[]);
-            string command = llList2String(data,0);
-            llOwnerSay(_SYMBOL_HOR_BAR_2);
-            if ( command == "success" ) {
-                llOwnerSay(_SYMBOL_ARROW+ " "+ llList2String(data,1));
-                llMessageLinked(LINK_THIS, READ_NOTECARD, "", NULL_KEY);
-            }
-            else {
-                llOwnerSay(body);
-                idle(_UPDATE_ERROR);
-                state idle;
-            }
+        else if (Method == URL_REQUEST_DENIED) {
+            idle(_URL_ERROR);
+            state idle;
         }
     }
 }
@@ -165,6 +110,25 @@ state run {
         if (num == RESET) {
             llResetScript();
         }
+        else if (num == SET_PARCELS_LIST) {
+            parcels = str;
+        }
+    }
+
+    http_request(key ID, string Method, string Body) {
+        if (Method == "GET") {
+            string path = llGetHTTPHeader(ID, "x-path-info");
+            if (path == "/ping") {
+                llOwnerSay(_PING_REQUESTED);
+                llHTTPResponse(ID, 200, "pong");
+            }
+            else if (path == "/get-parcels-list") {
+                llHTTPResponse(ID, 200, parcels);
+            }
+            else {
+                llHTTPResponse(ID, 403, "Access denied !");
+            }
+        }
     }
 }
 
@@ -176,13 +140,19 @@ state idle {
         if (num == RESET) {
             llResetScript();
         }
+        else if (num == SET_PARCELS_LIST) {
+            parcels = str;
+        }
     }
 
     http_request(key ID, string Method, string Body) {
         if (Method == "GET") {
-            Body = llStringTrim( Body , STRING_TRIM);
-            if (Body == "ping") {
-               llHTTPResponse(ID, 200, "pong");
+            string path = llGetHTTPHeader(ID, "x-path-info");
+            if (path == "/ping") {
+                llHTTPResponse(ID, 200, "pong");
+            }
+            else {
+                llHTTPResponse(ID, 403, "Access denied !");
             }
         }
     }

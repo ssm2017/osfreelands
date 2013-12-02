@@ -23,6 +23,13 @@ function osfreelands_menu() {
 		'access arguments' => array('administer site configuration'),
 		'type' => MENU_NORMAL_ITEM,
 	);
+	$items['osfreelands/terminals/update/%/%'] = array(
+		'title' => 'Update terminal',
+		'type' => MENU_CALLBACK,
+		'page callback' => 'osfreelands_update_terminal',
+		'page arguments' => array(3, 4),
+		'access callback' => TRUE,
+	);
 	return $items;
 }
 
@@ -69,6 +76,73 @@ function osfreelands_settings() {
 }
 
 /**
+ * Implements hook_node_view.
+ */
+function osfreelands_node_view($node, $build_mode = 'full') {
+	if ($node->type == 'freelands_terminal' && $build_mode == 'full') {
+		if (($GLOBALS['user']->uid == $node->uid) || $GLOBALS['user']->uid == 1) {
+			$node->content['osfreelands'] = array(
+				'#type' => 'link',
+				'#title' => t('Update terminal'),
+				'#href' => 'osfreelands/terminals/update/' . $node->nid . '/' . base64_encode($node->field_osfl_terminal_url[$node->language][0]['value']),
+			);
+		}
+	}
+}
+
+function osfreelands_update_terminal($nid, $url) {
+	$url = base64_decode($url);
+	// check if terminal is answering
+	$response = osfreelands_http_request($url . 'ping');
+	if ($response->success && $response->code == 200) {
+		drupal_set_message(t('The terminal is answering.'));
+	}
+	else {
+		drupal_set_message(t('The terminal is not answering : !error', array('!error' => $response->data . ' (' . $response->code . ')')), 'error');
+		drupal_goto('node/' . $nid);
+	}
+
+	// get parcels list
+	$parcels_list = array();
+	$response = osfreelands_http_request($url . 'get-parcels-list');
+	if ($response->success && $response->code == 200) {
+		drupal_set_message(t('Parcel list received.'));
+		dsm(base64_decode($response->data), 'response');
+		$parcels_list = drupal_json_decode(base64_decode($response->data));
+		dsm($parcels_list);
+	}
+	else {
+		drupal_set_message(t('Unable to get the parcels list : !error', array('!error' => $response->data . ' (' . $response->code . ')')), 'error');
+		drupal_goto('node/' . $nid);
+	}
+	// get parcels infos
+	if (count($parcels_list)) {
+		dsm($parcels_list);
+		drupal_goto('node/'.$nid);
+	}
+	$operations = array();
+	$operations[] = array('test_blabla', array('aaa', 'bbb'));
+	$operations[] = array('test_blabla', array('aaa', 'bbb'));
+	$operations[] = array('test_blabla', array('aaa', 'bbb'));
+	$operations[] = array('test_blabla', array('aaa', 'bbb'));
+	$operations[] = array('test_blabla', array('aaa', 'bbb'));
+	$operations[] = array('test_blabla', array('aaa', 'bbb'));
+	$operations[] = array('test_blabla', array('aaa', 'bbb'));
+	$operations[] = array('test_blabla', array('aaa', 'bbb'));
+
+	$batch = array(
+		'operations' => $operations,
+		'finished' => 'test_finished',
+		'title' => t('Processing batch 2'),
+		'init_message' => t('Batch 2 is starting.'),
+		'progress_message' => t('Processed @current out of @total.'),
+		'error_message' => t('Batch 2 has encountered an error.'),
+	);
+	batch_set($batch);
+	batch_process('node/' . $nid);
+}
+
+/**
  * metaverse frameworkd dispatcher
  */
 function osfreelands_dispatch($params) {
@@ -80,12 +154,6 @@ function osfreelands_dispatch($params) {
 		case 'save_terminal':
 			osfreelands_inworld_save_terminal($sl, $args);
 			break;
-		case 'save':
-			osfreelands_inworld_save($sl, $args);
-			break;
-		case 'check':
-			osfreelands_inworld_check($sl, $args);
-			break;
 		default:
 			$sl->response['status'] = FALSE;
 			$sl->response['message'] = "Oops! Unknown command: $cmd.";
@@ -96,7 +164,7 @@ function osfreelands_dispatch($params) {
 function osfreelands_get_messages() {
 	$output = "";
 	$messages = drupal_get_messages();
-	foreach($messages as $type) {
+	foreach ($messages as $type) {
 		if (count($type)) {
 			foreach ($type as $message) {
 				$output .= $message . "\n";
@@ -122,8 +190,8 @@ function osfreelands_manage_parcels($terminal, $args) {
 			return NULL;
 		}
 		metaverse_framework_debug("-----------------------------");
-	  metaverse_framework_debug("parcels : ". print_r($parcels, true));
-	  metaverse_framework_debug("-----------------------------");
+		metaverse_framework_debug("parcels : " . print_r($parcels, true));
+		metaverse_framework_debug("-----------------------------");
 	}
 	else {
 		drupal_set_message(t('No parcels submitted.'), 'error');
@@ -377,4 +445,31 @@ function osfreelands_get_terminals_by_region($values) {
 		return $nodes_ids;
 	}
 	return NULL;
+}
+
+function osfreelands_http_request($url) {
+	$response = new stdclass();
+	$response->data = '';
+	if (!function_exists('curl_init')) {
+		$response->success = FALSE;
+		$response->code = -1;
+		$response->message = 'Curl is not installed';
+	}
+	$ch = curl_init();
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_HEADER, 0);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+	$data = curl_exec($ch);
+	if (!$data) {
+		$response->success = FALSE;
+		$response->code = curl_errno($ch);
+		$response->message = curl_error($ch);
+	}
+	$response->success = TRUE;
+	$response->code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+	$response->message = '';
+	$response->data = $data;
+	curl_close($ch);
+	return $response;
 }
