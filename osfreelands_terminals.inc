@@ -92,6 +92,7 @@ function osfreelands_save_terminal($values, $args = array(), $is_new = TRUE) {
 		$node = node_load($values->nid);
 	}
 
+	// get the owner uid if possible
 	$node->uid = 1;
 
 	if (module_exists('d4os_ui_users')) {
@@ -101,6 +102,18 @@ function osfreelands_save_terminal($values, $args = array(), $is_new = TRUE) {
 			$node->uid = $uid;
 		}
 	}
+	else if (module_exists('metaverse_user')) {
+		$query = new EntityFieldQuery();
+		$entities = $query->entityCondition('entity_type', 'user')
+				->fieldCondition('field_mu_user_uuid', 'value', $values->ownerkey)
+				->execute();
+		if (isset($entities['user'])) {
+			reset($entities['user']);
+			$node->uid = key($entities['user']);
+		}
+	}
+
+	// fill other values
 	$node->title = $values->objectname;
 	$node->language = LANGUAGE_NONE;
 
