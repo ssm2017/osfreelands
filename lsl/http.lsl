@@ -29,10 +29,6 @@ string _MISSING_VARS = "Missing vars";
 // terminal
 string _UPDATING_TERMINAL = "Updating terminal";
 string _UPDATE_ERROR = "Update error";
-// http request
-string _REQUESTING_URL = "Requesting the url";
-string _URL_SUCCESS = "Url request success";
-string _URL_ERROR = "Url request error";
 // http errors
 string _HTTP_ERROR = "http error";
 string _REQUEST_TIMED_OUT = "Request timed out";
@@ -49,11 +45,11 @@ string _SERVER_ERROR = "Server error";
 // common
 integer RESET = 70000;
 integer SET_ERROR = 70016;
+// terminal
+integer TERMINAL_SAVE = 70101;
+integer TERMINAL_SAVED = 70102;
 // http
-integer HTTP_REQUEST_GET_URL = 70064;
-integer HTTP_REQUEST_URL_SUCCESS = 70065;
-// notecard
-integer READ_NOTECARD = 70063;
+integer HTTP_REQUEST_URL_SUCCESS = 70205;
 // *********************
 //      FUNCTIONS
 // *********************
@@ -129,6 +125,8 @@ default {
         }
         else if (num == HTTP_REQUEST_URL_SUCCESS) {
             terminal_url = str;
+        }
+        else if (num == TERMINAL_SAVE) {
             updateTerminal("save_terminal", "terminal_url="+llStringToBase64(terminal_url));
         }
     }
@@ -146,7 +144,7 @@ default {
             llOwnerSay(_SYMBOL_HOR_BAR_2);
             if ( command == "success" ) {
                 llOwnerSay(_SYMBOL_ARROW+ " "+ llList2String(data,1));
-                llMessageLinked(LINK_THIS, READ_NOTECARD, "", NULL_KEY);
+                llMessageLinked(LINK_THIS, TERMINAL_SAVED, "", NULL_KEY);
             }
             else {
                 llOwnerSay(body);
@@ -164,6 +162,9 @@ state run {
     link_message(integer sender_num, integer num, string str, key id) {
         if (num == RESET) {
             llResetScript();
+        }
+        else if (num == SET_ERROR) {
+            state idle;
         }
     }
 }

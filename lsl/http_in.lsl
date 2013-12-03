@@ -23,12 +23,6 @@ string _SYMBOL_HOR_BAR_2 = "⚊⚊⚊⚊⚊⚊⚊⚊⚊⚊⚊⚊⚊⚊⚊⚊⚊�
 string _SYMBOL_ARROW = "⤷";
 string _RESET = "Reset";
 string _THE_SCRIPT_WILL_STOP = "The script will stop";
-// checks
-string _MISSING_VAR_NAMED = "Missing var named";
-string _MISSING_VARS = "Missing vars";
-// terminal
-string _UPDATING_TERMINAL = "Updating terminal";
-string _UPDATE_ERROR = "Update error";
 // http request
 string _REQUESTING_URL = "Requesting the url";
 string _URL_SUCCESS = "Url request success";
@@ -53,10 +47,8 @@ string parcels = "";
 integer RESET = 70000;
 integer SET_ERROR = 70016;
 // http
-integer HTTP_REQUEST_GET_URL = 70064;
-integer HTTP_REQUEST_URL_SUCCESS = 70065;
-// notecard
-integer READ_NOTECARD = 70063;
+integer HTTP_REQUEST_GET_URL = 70204;
+integer HTTP_REQUEST_URL_SUCCESS = 70205;
 // parcels
 integer SET_PARCELS_LIST = 71011;
 // *********************
@@ -97,6 +89,9 @@ default {
         else if (num == SET_PARCELS_LIST) {
             parcels = str;
         }
+        else if (num == SET_ERROR) {
+            state idle;
+        }
     }
 
     http_request(key ID, string Method, string Body) {
@@ -104,7 +99,7 @@ default {
             terminal_url = Body;
             llOwnerSay(_URL_SUCCESS+" : "+Body);
             llSetText(_URL_SUCCESS, <0.0,1.0,0.0>,1);
-            llMessageLinked(LINK_SET, HTTP_REQUEST_URL_SUCCESS, terminal_url, NULL_KEY);
+            llMessageLinked(LINK_THIS, HTTP_REQUEST_URL_SUCCESS, terminal_url, NULL_KEY);
             state run;
         }
         else if (Method == URL_REQUEST_DENIED) {
@@ -124,6 +119,9 @@ state run {
         }
         else if (num == SET_PARCELS_LIST) {
             parcels = str;
+        }
+        else if (num == SET_ERROR) {
+            state idle;
         }
     }
 

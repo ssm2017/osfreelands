@@ -21,27 +21,13 @@ string _SYMBOL_HOR_BAR_1 = "⚌⚌⚌⚌⚌⚌⚌⚌⚌⚌⚌⚌⚌⚌⚌⚌⚌�
 string _SYMBOL_HOR_BAR_2 = "⚊⚊⚊⚊⚊⚊⚊⚊⚊⚊⚊⚊⚊⚊⚊⚊⚊⚊⚊⚊";
 string _SYMBOL_ARROW = "⤷";
 // common
-string _INVENTORY_HAS_CHANGED = "Inventory has changed";
 string _RESET = "Reset";
 string _THE_SCRIPT_WILL_STOP = "The script will stop";
 string _STOPPED = "Stopped";
 string _READY = "Ready";
-// checks
-string _MISSING_NOTECARD = "Missing notecard";
-string _MISSING_VAR_NAMED = "Missing var named";
-string _IN_SCRIPT_NAMED = "in script named";
-string _CHECKING_THE_TEXTURE = "Checking the texture ...";
-string _RESET_VALUES = "Reseting the renting values";
-string _MISSING_VARS = "Missing vars";
-// config
-string _START_READING_CONFIG = "Starting reading config";
-string _SET_TO = "is set to";
-string _CONFIG_READ = "Config read";
-
 // ============================================================
 //      NOTHING SHOULD BE MODIFIED UNDER THIS LINE
 // ============================================================
-string PARAM_SEPARATOR = "||";
 key owner;
 // ********************
 //      Constants
@@ -50,11 +36,14 @@ key owner;
 integer RESET = 70000;
 integer SET_ERROR = 70016;
 // http
-integer HTTP_REQUEST_GET_URL = 70064;
+integer HTTP_REQUEST_GET_URL = 70204;
+integer HTTP_REQUEST_URL_SUCCESS = 70205;
+// terminal
+integer TERMINAL_SAVE = 70101;
+integer TERMINAL_SAVED = 70102;
 // notecard
-integer READ_NOTECARD = 70063;
-// regions
-integer SET_PARCELS_LIST = 71011;
+integer READ_NOTECARD = 70501;
+integer NOTECARD_READ = 70502;
 // *********************
 //      FUNCTIONS
 // *********************
@@ -91,16 +80,18 @@ default {
         }
     }
 
-    changed(integer change) {
-        if (change & CHANGED_INVENTORY) {
-            llOwnerSay(_SYMBOL_ARROW+ " "+ _INVENTORY_HAS_CHANGED);
-            reset();
-        }
-    }
-
     link_message(integer sender_num, integer num, string str, key id) {
         if (num == RESET) {
             llResetScript();
+        }
+        else if (num == HTTP_REQUEST_URL_SUCCESS) {
+            llMessageLinked(LINK_THIS, TERMINAL_SAVE, "", NULL_KEY);
+        }
+        else if (num == TERMINAL_SAVED) {
+            llMessageLinked(LINK_THIS, READ_NOTECARD, "", NULL_KEY);
+        }
+        else if (num == NOTECARD_READ) {
+            state run;
         }
         else if (num == SET_ERROR) {
             state idle;
@@ -126,13 +117,6 @@ state run {
         }
     }
 
-    changed(integer change) {
-        if (change & CHANGED_INVENTORY) {
-            llOwnerSay(_SYMBOL_ARROW+ " "+ _INVENTORY_HAS_CHANGED);
-            reset();
-        }
-    }
-
     link_message(integer sender_num, integer num, string str, key id) {
         if (num == RESET) {
             llResetScript();
@@ -153,13 +137,6 @@ state idle {
 
     touch_start(integer number) {
         if ( llDetectedKey(0) == owner ) {
-            reset();
-        }
-    }
-
-    changed(integer change) {
-        if (change & CHANGED_INVENTORY) {
-            llOwnerSay(_SYMBOL_ARROW+ " "+ _INVENTORY_HAS_CHANGED);
             reset();
         }
     }
