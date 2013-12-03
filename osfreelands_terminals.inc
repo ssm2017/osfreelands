@@ -124,7 +124,7 @@ function osfreelands_update_terminal($nid, $url) {
 	$url = base64_decode($url);
 
 	// check if terminal is answering
-	$response = metaverse_user_http_request($url . 'ping');
+	$response = metaverse_framework_http_request($url . 'ping');
 	if ($response->success && $response->code == 200) {
 		drupal_set_message(t('The terminal is answering.'));
 	}
@@ -135,7 +135,7 @@ function osfreelands_update_terminal($nid, $url) {
 
 	// get parcels list
 	$parcels_list = array();
-	$response = metaverse_user_http_request($url . 'get-parcels-list');
+	$response = metaverse_framework_http_request($url . 'get-parcels-list');
 	if ($response->success && $response->code == 200) {
 		drupal_set_message(t('Parcel list received.'));
 		$parcels_list = drupal_json_decode(base64_decode($response->data));
@@ -188,18 +188,18 @@ function osfreelands_delete_terminals($terminals_nids) {
 function osfreelands_inworld_save_terminal (&$sl, $args) {
 	// check if the terminal url is answering
 	if (isset($args['terminal_url'])) {
-		$response = metaverse_user_http_request(base64_decode($args['terminal_url']). 'ping');
+		$response = metaverse_framework_http_request(base64_decode($args['terminal_url']). 'ping');
 		if ($response->code != 200 || $response->data != 'pong') {
 			drupal_set_message(t('Terminal is not answering : !error ', array('!error' => $response->message)));
 			$sl->response['status'] = FALSE;
-			$sl->response['message'] = "error;". osfreelands_get_messages();
+			$sl->response['message'] = "error;". metaverse_framework_get_messages();
 			return;
 		}
 	}
 	else {
 		drupal_set_message(t('No url given.'));
 		$sl->response['status'] = FALSE;
-		$sl->response['message'] = "error;". osfreelands_get_messages();
+		$sl->response['message'] = "error;". metaverse_framework_get_messages();
 		return;
 	}
 	// check if the terminal exists
@@ -238,10 +238,10 @@ function osfreelands_inworld_save_terminal (&$sl, $args) {
 	}
 	if (is_object($terminal)) {
 		$sl->response['status'] = TRUE;
-		$sl->response['message'] = "success;". osfreelands_get_messages();
+		$sl->response['message'] = "success;". metaverse_framework_get_messages();
 	}
 	else {
 		$sl->response['status'] = FALSE;
-		$sl->response['message'] = "error;". osfreelands_get_messages();
+		$sl->response['message'] = "error;". metaverse_framework_get_messages();
 	}
 }

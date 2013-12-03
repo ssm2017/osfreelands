@@ -29,7 +29,7 @@ function osfreelands_manage_parcels($terminal, $args) {
 	$saved_parcels = array();
 	foreach ($parcels as $parcel) {
 		// check if uuid
-		if (!osfreelands_check_uuid($parcel[0])) {
+		if (!metaverse_framework_check_uuid($parcel[0])) {
 			drupal_set_message(t('Error with parcel uuid.'), 'error');
 			return NULL;
 		}
@@ -170,7 +170,7 @@ function osfreelands_get_parcel_infos($parcel_location, $terminal_url, $terminal
 	$result = "not ok";
 	$url = $terminal_url . 'get-parcel-infos?'.urlencode($parcel_location);
 	// get the infos inworld
-	$response = metaverse_user_http_request($url);
+	$response = metaverse_framework_http_request($url);
 	if ($response->success && $response->code == 200) {
 		// parse infos received
 		$parcel_infos = (object)drupal_json_decode(base64_decode($response->data));

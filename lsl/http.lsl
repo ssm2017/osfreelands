@@ -177,13 +177,4 @@ state idle {
             llResetScript();
         }
     }
-
-    http_request(key ID, string Method, string Body) {
-        if (Method == "GET") {
-            Body = llStringTrim( Body , STRING_TRIM);
-            if (Body == "ping") {
-               llHTTPResponse(ID, 200, "pong");
-            }
-        }
-    }
 }

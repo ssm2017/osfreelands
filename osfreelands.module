@@ -83,7 +83,7 @@ function osfreelands_node_view($node, $build_mode = 'full') {
 	if ($node->type == 'freelands_terminal' && $build_mode == 'full') {
 		$url = $node->field_osfl_terminal_url[$node->language][0]['value'];
 		// ping terminal
-		$response = metaverse_user_http_request($url . 'ping');
+		$response = metaverse_framework_http_request($url . 'ping');
 		if ($response->success && $response->code == 200) {
 			$status = 'status';
 			$message = t('Terminal is online');
@@ -123,28 +123,4 @@ function osfreelands_dispatch($params) {
 			$sl->response['message'] = "Oops! Unknown command: $cmd.";
 			break;
 	}
-}
-
-/********************
- *		HELPERS
- ********************/
-
-function osfreelands_get_messages() {
-	$output = "";
-	$messages = drupal_get_messages();
-	foreach ($messages as $type) {
-		if (count($type)) {
-			foreach ($type as $message) {
-				$output .= $message . "\n";
-			}
-		}
-	}
-	return $output;
-}
-
-function osfreelands_check_uuid($uuid) {
-	if (preg_match("/^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/", $uuid)) {
-		return TRUE;
-	}
-	return FALSE;
 }
