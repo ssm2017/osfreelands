@@ -170,7 +170,7 @@ function osfreelands_get_parcel_infos($parcel_location, $terminal_url, $terminal
 	$result = "not ok";
 	$url = $terminal_url . 'get-parcel-infos?'.urlencode($parcel_location);
 	// get the infos inworld
-	$response = osfreelands_http_request($url);
+	$response = metaverse_user_http_request($url);
 	if ($response->success && $response->code == 200) {
 		// parse infos received
 		$parcel_infos = (object)drupal_json_decode(base64_decode($response->data));

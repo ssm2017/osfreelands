@@ -166,6 +166,19 @@ function _osfreelands_installed_fields($node_type) {
 						'max_length' => 255
 					)
 				),
+				// terminal_location
+				'osfl_terminal_location' => array(
+					'field_name' => 'field_osfl_terminal_location',
+					'type' => 'text',
+					'module' => 'text',
+					'active' => 1,
+					'locked' => 1,
+					'cardinality' => 1,
+					'deleted' => 0,
+					'settings' => array(
+						'max_length' => 13
+					)
+				),
 			);
 			break;
 		case 'freelands_parcel':
@@ -355,6 +368,20 @@ function _osfreelands_installed_instances($node_type) {
 					'widget' => array(
 						'type' => 'text_textfield',
 						'module' => 'text',
+					)
+				),
+				// terminal location
+				'osfl_terminal_location' => array(
+					'field_name' => 'field_osfl_terminal_location',
+					'label' => t('Terminal location'),
+					'required' => TRUE,
+					'widget' => array(
+						'type' => 'text_textfield',
+						'module' => 'text',
+						'settings' => array(
+							'size' => 13,
+							'max_length' => 13
+						)
 					)
 				),
 			);

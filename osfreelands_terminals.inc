@@ -114,6 +114,7 @@ function osfreelands_save_terminal($values, $args = array(), $is_new = TRUE) {
 	}
 	$node->field_osfl_terminal_owner_key[$node->language][0]['value'] = $values->ownerkey;
 	$node->field_osfl_region_name[$node->language][0]['value'] = $values->region_name;
+	$node->field_osfl_terminal_location[$node->language][0]['value'] = '<'.floor($values->position_x).','.floor($values->position_y).','.floor($values->position_z).'>';
 
 	node_save($node);
 	return $node;
@@ -123,7 +124,7 @@ function osfreelands_update_terminal($nid, $url) {
 	$url = base64_decode($url);
 
 	// check if terminal is answering
-	$response = osfreelands_http_request($url . 'ping');
+	$response = metaverse_user_http_request($url . 'ping');
 	if ($response->success && $response->code == 200) {
 		drupal_set_message(t('The terminal is answering.'));
 	}
@@ -134,7 +135,7 @@ function osfreelands_update_terminal($nid, $url) {
 
 	// get parcels list
 	$parcels_list = array();
-	$response = osfreelands_http_request($url . 'get-parcels-list');
+	$response = metaverse_user_http_request($url . 'get-parcels-list');
 	if ($response->success && $response->code == 200) {
 		drupal_set_message(t('Parcel list received.'));
 		$parcels_list = drupal_json_decode(base64_decode($response->data));
@@ -187,7 +188,7 @@ function osfreelands_delete_terminals($terminals_nids) {
 function osfreelands_inworld_save_terminal (&$sl, $args) {
 	// check if the terminal url is answering
 	if (isset($args['terminal_url'])) {
-		$response = osfreelands_http_request(base64_decode($args['terminal_url']). 'ping');
+		$response = metaverse_user_http_request(base64_decode($args['terminal_url']). 'ping');
 		if ($response->code != 200 || $response->data != 'pong') {
 			drupal_set_message(t('Terminal is not answering : !error ', array('!error' => $response->message)));
 			$sl->response['status'] = FALSE;

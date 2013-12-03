@@ -83,7 +83,7 @@ function osfreelands_node_view($node, $build_mode = 'full') {
 	if ($node->type == 'freelands_terminal' && $build_mode == 'full') {
 		$url = $node->field_osfl_terminal_url[$node->language][0]['value'];
 		// ping terminal
-		$response = osfreelands_http_request($url . 'ping');
+		$response = metaverse_user_http_request($url . 'ping');
 		if ($response->success && $response->code == 200) {
 			$status = 'status';
 			$message = t('Terminal is online');
@@ -147,31 +147,4 @@ function osfreelands_check_uuid($uuid) {
 		return TRUE;
 	}
 	return FALSE;
-}
-
-function osfreelands_http_request($url, $settings = array()) {
-	$response = new stdclass();
-	$response->data = '';
-	if (!function_exists('curl_init')) {
-		$response->success = FALSE;
-		$response->code = -1;
-		$response->message = 'Curl is not installed';
-	}
-	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_URL, $url);
-	curl_setopt($ch, CURLOPT_HEADER, 0);
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-	$data = curl_exec($ch);
-	if (!$data) {
-		$response->success = FALSE;
-		$response->code = curl_errno($ch);
-		$response->message = curl_error($ch);
-	}
-	$response->success = TRUE;
-	$response->code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-	$response->message = '';
-	$response->data = $data;
-	curl_close($ch);
-	return $response;
 }
