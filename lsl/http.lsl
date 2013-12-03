@@ -58,7 +58,7 @@ integer READ_NOTECARD = 70063;
 //      FUNCTIONS
 // *********************
 // error
-idle(string message) {
+error(string message) {
     llOwnerSay(_SYMBOL_WARNING+ " "+ message + "."+ _THE_SCRIPT_WILL_STOP);
     llSetText(message, <1.0,0.0,0.0>,1);
     llMessageLinked(LINK_SET, SET_ERROR, "", NULL_KEY);
@@ -118,7 +118,7 @@ default {
             check = 0;
         }
         if (!check) {
-            idle(_MISSING_VARS);
+            error(_MISSING_VARS);
             state idle;
         }
     }
@@ -136,7 +136,7 @@ default {
     http_response(key request_id, integer status, list metadata, string body) {
         if ( status != 200 ) {
             getServerAnswer(status, body);
-            idle(_HTTP_ERROR);
+            error(_HTTP_ERROR);
             state idle;
         }
         else {
@@ -150,7 +150,7 @@ default {
             }
             else {
                 llOwnerSay(body);
-                idle(_UPDATE_ERROR);
+                error(_UPDATE_ERROR);
                 state idle;
             }
         }

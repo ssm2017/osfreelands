@@ -1,6 +1,44 @@
 <?php
 
 /**
+ * @package    osFreeLands
+ * @copyright Copyright (C) 2013 Wene - ssm2017 Binder ( S.Massiaux ). All rights reserved.
+ * @license   GNU/GPL, http://www.gnu.org/licenses/gpl-2.0.html
+ * osFreeLands is free software. This version may have been modified pursuant
+ * to the GNU General Public License, and as distributed it includes or
+ * is derivative of works licensed under the GNU General Public License or
+ * other free or open source software licenses.
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function osfreelands_requirements($phase) {
+  $requirements = array();
+  $t = get_t();
+   if ($phase == 'install') {
+		 $valid = FALSE;
+		 // check if d4os_ui_users is installed
+		 if (module_exists('d4os_ui_users')) {
+			 $valid = TRUE;
+		 }
+		 // check if metaverse_user is installed
+		 if (module_exists('metaverse_user')) {
+			 $valid = TRUE;
+		 }
+    if (!$valid) {
+      $requirements['osfreelands'] = array(
+        'title' => $t('OsFreelands'),
+        'description' => $t('You need to enable either the d4os_ui_module or metaverse_user module to be able to enable the osfreelands module.'),
+        'severity' => REQUIREMENT_ERROR,
+				'weight' => -1000,
+      );
+    }
+  }
+  return $requirements;
+}
+
+/**
  * Implements hook_install().
  */
 function osfreelands_install() {
@@ -464,7 +502,7 @@ function osfreelands_uninstall() {
 			$nids[] = $row->nid;
 		}
 
-		// delete all the job nodes at once
+		// delete all the nodes at once
 		node_delete_multiple($nids);
 
 		// remove peristant variables that control settings

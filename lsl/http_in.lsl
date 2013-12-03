@@ -63,10 +63,22 @@ integer SET_PARCELS_LIST = 71011;
 //      FUNCTIONS
 // *********************
 // error
-idle(string message) {
+error(string message) {
     llOwnerSay(_SYMBOL_WARNING+ " "+ message + "."+ _THE_SCRIPT_WILL_STOP);
     llSetText(message, <1.0,0.0,0.0>,1);
     llMessageLinked(LINK_SET, SET_ERROR, "", NULL_KEY);
+}
+// get parcel infos
+string getParcelInfos(string parcel_coords_str) {
+  vector parcel_coords = (vector)llUnescapeURL(parcel_coords_str);
+  list details = llGetParcelDetails(parcel_coords, [PARCEL_DETAILS_NAME, PARCEL_DETAILS_DESC, PARCEL_DETAILS_OWNER, PARCEL_DETAILS_AREA, PARCEL_DETAILS_ID]);
+  string output = "{"
+          + "\"name\":\"" + llList2String(details ,0) + "\","
+          + "\"desc\":\"" + llList2String(details ,1) + "\","
+          + "\"owner\":\"" + llList2String(details ,2) + "\","
+          + "\"area\":\"" + llList2String(details ,3) + "\","
+          + "\"uuid\":\"" + llList2String(details ,4) + "\"}";
+  return llStringToBase64(output);
 }
 // ***********************
 //  INIT PROGRAM
@@ -96,7 +108,7 @@ default {
             state run;
         }
         else if (Method == URL_REQUEST_DENIED) {
-            idle(_URL_ERROR);
+            error(_URL_ERROR);
             state idle;
         }
     }
@@ -124,6 +136,9 @@ state run {
             }
             else if (path == "/get-parcels-list") {
                 llHTTPResponse(ID, 200, parcels);
+            }
+            else if (path == "/get-parcel-infos") {
+                llHTTPResponse(ID, 200, getParcelInfos(llGetHTTPHeader(ID, "x-query-string")));
             }
             else {
                 llHTTPResponse(ID, 403, "Access denied !");
