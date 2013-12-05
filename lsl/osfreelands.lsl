@@ -101,7 +101,10 @@ default {
     changed(integer change) {
         if (change & CHANGED_REGION_START) {
           reset();
-      }
+        }
+        else if (change & 256) {
+          reset();
+        }
     }
 }
 
@@ -135,7 +138,10 @@ state run {
     changed(integer change) {
         if (change & CHANGED_REGION_START) {
           reset();
-      }
+        }
+        else if (change & 256) {
+          reset();
+        }
     }
 }
 
@@ -162,6 +168,9 @@ state idle {
     changed(integer change) {
         if (change & CHANGED_REGION_START) {
           reset();
-      }
+        }
+        else if (change & 256) {
+          reset();
+        }
     }
 }
