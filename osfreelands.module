@@ -46,7 +46,14 @@ function osfreelands_menu() {
  * Admin settings
  */
 function osfreelands_settings() {
+	// get roles
+  $roles = array(
+    '0' => t('None'),
+  );
+  $roles += user_roles(TRUE);
+
 	$form = array();
+	// password
 	$form['osfreelands_password_fieldset'] = array(
 		'#type' => 'fieldset',
 		'#title' => t('Password'),
@@ -59,6 +66,7 @@ function osfreelands_settings() {
 		'#default_value' => variable_get('osfreelands_password', '1234'),
 		'#description' => t("Enter the password to communicate with the boxes."),
 	);
+	// fieldset
 	$form['osfreelands_parcels_fieldset'] = array(
 		'#type' => 'fieldset',
 		'#title' => t('Parcels'),
@@ -81,6 +89,27 @@ function osfreelands_settings() {
 		'#default_value' => variable_get('osfreelands_renting_duration', 0),
 		'#description' => t("Renting duration in days. (0 means infinite)"),
 	);
+	// roles
+	$form['osfreelands_roles_fieldset'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('Roles'),
+		'#collapsible' => FALSE,
+		'#collapsed' => FALSE,
+	);
+  $form['osfreelands_roles_fieldset']['osfreelands_terminal_role'] = array(
+    '#type' => 'select',
+    '#title' => t('Assigned role to terminal owners'),
+    '#default_value' => variable_get('osfreelands_terminal_role', 0),
+    '#options' => $roles,
+    '#description' => t('This role is automatically assigned to terminal owners.'),
+  );
+	$form['osfreelands_roles_fieldset']['osfreelands_parcel_role'] = array(
+    '#type' => 'select',
+    '#title' => t('Assigned role to parcel owners'),
+    '#default_value' => variable_get('osfreelands_parcel_role', 0),
+    '#options' => $roles,
+    '#description' => t('This role is automatically assigned to parcel owners.'),
+  );
 	return system_settings_form($form);
 }
 
@@ -133,4 +162,31 @@ function osfreelands_dispatch($params) {
 			$sl->response['message'] = "Oops! Unknown command: $cmd.";
 			break;
 	}
+}
+
+function osfreelands_set_role($uid, $role) {
+  if (!is_numeric($uid)) {
+		return;
+	}
+
+	switch ($role) {
+		case 'terminal':
+			$rid = variable_get('osfreelands_terminal_role', 0);
+			break;
+		case 'parcel':
+			$rid = variable_get('osfreelands_parcel_role', 0);
+			break;
+		default:
+			return;
+	}
+
+  if ($rid == 0) {
+		return;
+	}
+
+  // remove assigned roles
+  db_query("DELETE FROM {users_roles} WHERE rid=:rid AND uid=:uid", array(':rid' => $rid, ':uid' => $uid));
+
+  // assign the role
+  db_query("INSERT INTO {users_roles} (rid, uid) VALUES (:rid, :uid)", array(':rid' => $rid, ':uid' => $uid));
 }

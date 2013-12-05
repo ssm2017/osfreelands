@@ -227,6 +227,7 @@ function osfreelands_check_parcel_rentable_by_uid(&$parcel, $uid) {
 
 function osfreelands_rent_parcel_callback($nid, $uid) {
 	$parcel = node_load($nid);
+	$success = FALSE;
 
 	// double check
 	$rentable = osfreelands_check_parcel_rentable_by_uid($parcel, $uid);
@@ -262,6 +263,7 @@ function osfreelands_rent_parcel_callback($nid, $uid) {
 				$parcel->end_time = time() + (86400 * $renting_duration);
 			}
 			$parcel = osfreelands_save_parcel($parcel, FALSE);
+			$success = TRUE;
 			drupal_set_message(t('Parcel rented.'));
 		}
 		else {
@@ -270,6 +272,10 @@ function osfreelands_rent_parcel_callback($nid, $uid) {
 	}
 	else {
 		drupal_set_message(t('Terminal error : !error', array('!error' => $response->code)), 'error');
+	}
+	// assign role
+	if (is_object($parcel) && $success) {
+		osfreelands_set_role($uid, 'parcel');
 	}
 	drupal_goto('node/' . $nid);
 }

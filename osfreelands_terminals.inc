@@ -249,6 +249,9 @@ function osfreelands_inworld_save_terminal (&$sl, $args) {
 		drupal_set_message(t('terminal created'));
 	}
 	if (is_object($terminal)) {
+		// assign role to terminal owner
+		osfreelands_set_role($terminal->uid, 'terminal');
+		// send the answer
 		$sl->response['status'] = TRUE;
 		$sl->response['message'] = "success;". metaverse_framework_get_messages();
 	}
