@@ -50,6 +50,12 @@ integer SET_PARCELS_LIST = 71011;
 // *********************
 //      FUNCTIONS
 // *********************
+string right(string src, string divider) {
+    integer index = llSubStringIndex( src, divider );
+    if(~index)
+        return llDeleteSubString( src, 0, index + llStringLength(divider) - 1);
+    return src;
+}
 // error
 error(string message) {
     llOwnerSay(_SYMBOL_WARNING+ " "+ message + "."+ _THE_SCRIPT_WILL_STOP);
@@ -58,15 +64,23 @@ error(string message) {
 }
 // get parcel infos
 string getParcelInfos(string parcel_coords_str) {
-  vector parcel_coords = (vector)llUnescapeURL(parcel_coords_str);
-  list details = llGetParcelDetails(parcel_coords, [PARCEL_DETAILS_NAME, PARCEL_DETAILS_DESC, PARCEL_DETAILS_OWNER, PARCEL_DETAILS_AREA, PARCEL_DETAILS_ID]);
-  string output = "{"
-          + "\"name\":\"" + llList2String(details ,0) + "\","
-          + "\"desc\":\"" + llList2String(details ,1) + "\","
-          + "\"owner\":\"" + llList2String(details ,2) + "\","
-          + "\"area\":\"" + llList2String(details ,3) + "\","
-          + "\"uuid\":\"" + llList2String(details ,4) + "\"}";
-  return llStringToBase64(output);
+    vector parcel_coords = (vector)llUnescapeURL(parcel_coords_str);
+    list details = llGetParcelDetails(parcel_coords, [PARCEL_DETAILS_NAME, PARCEL_DETAILS_DESC, PARCEL_DETAILS_OWNER, PARCEL_DETAILS_AREA, PARCEL_DETAILS_ID]);
+    string output = "{"
+            + "\"name\":\"" + llList2String(details ,0) + "\","
+            + "\"desc\":\"" + llList2String(details ,1) + "\","
+            + "\"owner\":\"" + llList2String(details ,2) + "\","
+            + "\"area\":\"" + llList2String(details ,3) + "\","
+            + "\"uuid\":\"" + llList2String(details ,4) + "\"}";
+    return llStringToBase64(output);
+}
+string rentParcel(string args) {
+    list data = llParseString2List(args, ["+"],[]);
+    vector parcel_coords = (vector)llUnescapeURL(llList2String(data, 0));
+    key owner_uuid = llList2Key(data, 1);
+    list rules =[PARCEL_DETAILS_OWNER, owner_uuid];
+    osSetParcelDetails(parcel_coords, rules);
+    return getParcelInfos((string)parcel_coords);
 }
 // ***********************
 //  INIT PROGRAM
@@ -132,7 +146,10 @@ state run {
                 llHTTPResponse(ID, 200, parcels);
             }
             else if (path == "/get-parcel-infos") {
-                llHTTPResponse(ID, 200, getParcelInfos(llGetHTTPHeader(ID, "x-query-string")));
+                llHTTPResponse(ID, 200, getParcelInfos(right(llGetHTTPHeader(ID, "x-query-string"), "=")));
+            }
+            else if (path == "/rent-parcel") {
+                llHTTPResponse(ID, 200, rentParcel(right(llGetHTTPHeader(ID, "x-query-string"), "=")));
             }
             else {
                 llHTTPResponse(ID, 403, "Access denied !");

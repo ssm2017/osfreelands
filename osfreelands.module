@@ -31,6 +31,14 @@ function osfreelands_menu() {
 		'access callback' => TRUE,
 		'file' => 'osfreelands_terminals.inc'
 	);
+	$items['osfreelands/parcels/rent/%/%'] = array(
+    'title' => 'parcel rent callback',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'osfreelands_rent_parcel_callback',
+    'page arguments' => array(3,4),
+    'access callback' => TRUE,
+		'file' => 'osfreelands_parcels.inc'
+  );
 	return $items;
 }
 
@@ -90,6 +98,20 @@ function osfreelands_node_view($node, $build_mode = 'full') {
 				module_load_include('inc', 'osfreelands', 'osfreelands_parcels');
 				osfreelands_add_rent_parcel_button($node);
 				break;
+		}
+	}
+}
+
+/**
+ * Implements hook_node_delete.
+ */
+function osfreelands_node_delete($node) {
+	if ($node->type == 'freelands_terminal') {
+		// delete parcels
+		module_load_include('inc', 'osfreelands', 'osfreelands_parcels');
+		$parcels_nids = osfreelands_get_parcels_by_terminal_nid(array('terminal_nid' => $node->nid));
+		if (!is_null($parcels_nids)) {
+			node_delete_multiple($parcels_nids);
 		}
 	}
 }

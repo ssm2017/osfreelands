@@ -98,31 +98,12 @@ function osfreelands_save_terminal($values, $args = array(), $is_new = TRUE) {
 
 function osfreelands_update_terminal($nid) {
 	// get the terminal
-	$terminal = node_load($nid);
+	$terminal = osfreelands_ping_terminal($nid);
+	if ($terminal->status != 'online') {
+		drupal_goto('node/'.$nid);
+	}
 
-	// get the url
 	$url = $terminal->field_osfl_term_url[$terminal->language][0]['value'];
-
-	// check if terminal is answering
-	$response = metaverse_framework_http_request($url . 'ping');
-	if ($response->success && $response->code == 200) {
-		if ($response->data == 'pong') {
-			drupal_set_message(t('The terminal is answering.'));
-		}
-		else if ($response->data == 'idle') {
-			drupal_set_message(t('Terminal is online but it is stopped (needs a reset)'), 'warning');
-			drupal_goto('node/' . $nid);
-		}
-		else {
-			drupal_set_message(t('Terminal is online but there is an error : !error', array('!error' => $response->data)), 'error');
-			drupal_goto('node/' . $nid);
-		}
-	}
-	else {
-		drupal_set_message(t('The terminal is not answering : !error', array('!error' => $response->data . ' (' . $response->code . ')')), 'error');
-		drupal_goto('node/' . $nid);
-	}
-
 	// get parcels list
 	$parcels_list = array();
 	$response = metaverse_framework_http_request($url . 'get-parcels-list');
@@ -275,4 +256,34 @@ function osfreelands_inworld_save_terminal (&$sl, $args) {
 		$sl->response['status'] = FALSE;
 		$sl->response['message'] = "error;". metaverse_framework_get_messages();
 	}
+}
+
+function osfreelands_ping_terminal($terminal_nid) {
+	// get the terminal
+	$terminal = node_load($terminal_nid);
+
+	// get the url
+	$url = $terminal->field_osfl_term_url[$terminal->language][0]['value'];
+
+	// check if terminal is answering
+	$response = metaverse_framework_http_request($url . 'ping');
+	if ($response->success && $response->code == 200) {
+		if ($response->data == 'pong') {
+			drupal_set_message(t('The terminal is answering.'));
+			$terminal->status = 'online';
+		}
+		else if ($response->data == 'idle') {
+			drupal_set_message(t('Terminal is online but it is stopped (needs a reset)'), 'warning');
+			$terminal->status = 'idle';
+		}
+		else {
+			drupal_set_message(t('Terminal is online but there is an error : !error', array('!error' => $response->data)), 'error');
+			$terminal->status = 'error';
+		}
+	}
+	else {
+		drupal_set_message(t('The terminal is not answering : !error', array('!error' => $response->data . ' (' . $response->code . ')')), 'error');
+		$terminal->status = 'offline';
+	}
+	return $terminal;
 }
