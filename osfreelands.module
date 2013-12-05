@@ -56,7 +56,7 @@ function osfreelands_settings() {
 	$form['osfreelands_password_fieldset']['osfreelands_password'] = array(
 		'#type' => 'textfield',
 		'#title' => t('Password.'),
-		'#default_value' => variable_get('osfreelands_password', '0000'),
+		'#default_value' => variable_get('osfreelands_password', '1234'),
 		'#description' => t("Enter the password to communicate with the boxes."),
 	);
 	$form['osfreelands_parcels_fieldset'] = array(

@@ -241,9 +241,14 @@ function osfreelands_rent_parcel_callback($nid, $uid) {
 	if ($terminal->status != 'online') {
 		drupal_goto('node/'.$nid);
 	}
+
+	// generates the password
+	$key_given = rand(15000,50000);
+	$pass_given = md5(variable_get('osfreelands_password', '1234').':'.$key_given);
+
 	// send the info inworld
 	$url = $terminal->field_osfl_term_url[$terminal->language][0]['value']
-			. 'rent-parcel?' . urlencode($parcel->field_osfl_parcel_location[$parcel->language][0]['value']) . '+' . $rentable->uuid;
+			. 'rent-parcel?' . $pass_given . '+'. $key_given . '+' . urlencode($parcel->field_osfl_parcel_location[$parcel->language][0]['value']) . '+' . $rentable->uuid;
 	$response = metaverse_framework_http_request($url);
 	if ($response->success && $response->code == 200) {
 		// parse infos received
@@ -262,6 +267,9 @@ function osfreelands_rent_parcel_callback($nid, $uid) {
 		else {
 			drupal_set_message(t('There was an error when saving parcel.'));
 		}
+	}
+	else {
+		drupal_set_message(t('Terminal error : !error', array('!error' => $response->code)), 'error');
 	}
 	drupal_goto('node/' . $nid);
 }

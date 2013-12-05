@@ -6,7 +6,7 @@
 // GNU General Public License or other free or open source software licenses.
 
 string url="http://home.ssm2017.com";
-string password = "0000";
+string password = "1234";
 integer website_refresh_time = 3600;
 // *********************************
 //      STRINGS
@@ -79,7 +79,9 @@ callWebsite(string cmd, string args) {
                     +"&cmd="+ cmd
                     +"&output_type="+outputType
                     +"&args_separator="+ARGS_SEPARATOR
-                    +"&arg="+args
+                    +"&arg="+args+ARGS_SEPARATOR
+                    +"password="+md5pass+ARGS_SEPARATOR
+                    +"keypass="+(string)keypass
                     );
 }
 // get server answer

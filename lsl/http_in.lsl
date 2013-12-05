@@ -5,6 +5,7 @@
 // osfreelands is free software and parts of it may contain or be derived from the
 // GNU General Public License or other free or open source software licenses.
 
+string password = "1234";
 // *********************************
 //      STRINGS
 // *********************************
@@ -50,6 +51,7 @@ integer SET_PARCELS_LIST = 71011;
 // *********************
 //      FUNCTIONS
 // *********************
+// helper used to remove the first unused = in http query
 string right(string src, string divider) {
     integer index = llSubStringIndex( src, divider );
     if(~index)
@@ -62,9 +64,18 @@ error(string message) {
     llSetText(message, <1.0,0.0,0.0>,1);
     llMessageLinked(LINK_SET, SET_ERROR, "", NULL_KEY);
 }
+// check password
+integer passwordIsValid(string pass_given, integer key_given) {
+    if (pass_given == llMD5String(password, key_given)) {
+      return 1;
+    }
+    return 0;
+}
 // get parcel infos
 string getParcelInfos(string parcel_coords_str) {
+    // retrieve the parcel coords
     vector parcel_coords = (vector)llUnescapeURL(parcel_coords_str);
+    // get the parcel infos
     list details = llGetParcelDetails(parcel_coords, [PARCEL_DETAILS_NAME, PARCEL_DETAILS_DESC, PARCEL_DETAILS_OWNER, PARCEL_DETAILS_AREA, PARCEL_DETAILS_ID]);
     string output = "{"
             + "\"name\":\"" + llList2String(details ,0) + "\","
@@ -74,10 +85,8 @@ string getParcelInfos(string parcel_coords_str) {
             + "\"uuid\":\"" + llList2String(details ,4) + "\"}";
     return llStringToBase64(output);
 }
-string rentParcel(string args) {
-    list data = llParseString2List(args, ["+"],[]);
-    vector parcel_coords = (vector)llUnescapeURL(llList2String(data, 0));
-    key owner_uuid = llList2Key(data, 1);
+// rent parcel
+string rentParcel(vector parcel_coords, key owner_uuid) {
     list rules =[PARCEL_DETAILS_OWNER, owner_uuid, PARCEL_DETAILS_GROUP, NULL_KEY];
     osSetParcelDetails(parcel_coords, rules);
     return getParcelInfos((string)parcel_coords);
@@ -149,7 +158,15 @@ state run {
                 llHTTPResponse(ID, 200, getParcelInfos(right(llGetHTTPHeader(ID, "x-query-string"), "=")));
             }
             else if (path == "/rent-parcel") {
-                llHTTPResponse(ID, 200, rentParcel(right(llGetHTTPHeader(ID, "x-query-string"), "=")));
+                // parse the http request query
+                list args = llParseString2List(right(llGetHTTPHeader(ID, "x-query-string"), "="), ["+"],[]);
+                // check the password
+                if (passwordIsValid(llList2String(args, 0), llList2Integer(args, 1))) {
+                    llHTTPResponse(ID, 200, rentParcel((vector)llUnescapeURL(llList2String(args, 2)), llList2Key(args, 3)));
+                }
+                else {
+                    llHTTPResponse(ID, 403, "Access denied !");
+                }
             }
             else {
                 llHTTPResponse(ID, 403, "Access denied !");
