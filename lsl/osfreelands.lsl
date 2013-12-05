@@ -85,17 +85,23 @@ default {
             llResetScript();
         }
         else if (num == HTTP_REQUEST_URL_SUCCESS) {
-            llMessageLinked(LINK_THIS, TERMINAL_SAVE, "", NULL_KEY);
-        }
-        else if (num == TERMINAL_SAVED) {
             llMessageLinked(LINK_THIS, READ_NOTECARD, "", NULL_KEY);
         }
         else if (num == NOTECARD_READ) {
+            llMessageLinked(LINK_THIS, TERMINAL_SAVE, "", NULL_KEY);
+        }
+        else if (num == TERMINAL_SAVED) {
             state run;
         }
         else if (num == SET_ERROR) {
             state idle;
         }
+    }
+
+    changed(integer change) {
+        if (change & CHANGED_REGION_START) {
+          reset();
+      }
     }
 }
 
@@ -125,6 +131,12 @@ state run {
             state idle;
         }
     }
+
+    changed(integer change) {
+        if (change & CHANGED_REGION_START) {
+          reset();
+      }
+    }
 }
 
 // **************
@@ -145,5 +157,11 @@ state idle {
         if (num == RESET) {
             llResetScript();
         }
+    }
+
+    changed(integer change) {
+        if (change & CHANGED_REGION_START) {
+          reset();
+      }
     }
 }

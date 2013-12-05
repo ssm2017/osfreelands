@@ -23,11 +23,11 @@ function osfreelands_menu() {
 		'access arguments' => array('administer site configuration'),
 		'type' => MENU_NORMAL_ITEM,
 	);
-	$items['osfreelands/terminals/update/%/%'] = array(
+	$items['osfreelands/terminals/update/%'] = array(
 		'title' => 'Update terminal',
 		'type' => MENU_CALLBACK,
 		'page callback' => 'osfreelands_update_terminal',
-		'page arguments' => array(3, 4),
+		'page arguments' => array(3),
 		'access callback' => TRUE,
 		'file' => 'osfreelands_terminals.inc'
 	);
@@ -62,8 +62,8 @@ function osfreelands_settings() {
 		'#title' => t('Max parcels per user.'),
 		'#size' => 4,
 		'#maxlength' => 4,
-		'#default_value' => variable_get('osfreelands_max_parcels_per_user', 1),
-		'#description' => t("Maximum quantity of parcels a single user can own."),
+		'#default_value' => variable_get('osfreelands_max_parcels_per_user', 0),
+		'#description' => t("Maximum quantity of parcels a single user can own. (0 means infinite)"),
 	);
 	$form['osfreelands_parcels_fieldset']['osfreelands_renting_duration'] = array(
 		'#type' => 'textfield',
@@ -71,7 +71,7 @@ function osfreelands_settings() {
 		'#size' => 3,
 		'#maxlength' => 3,
 		'#default_value' => variable_get('osfreelands_renting_duration', 0),
-		'#description' => t("Renting duration in days (0 means infinite)."),
+		'#description' => t("Renting duration in days. (0 means infinite)"),
 	);
 	return system_settings_form($form);
 }
@@ -80,28 +80,16 @@ function osfreelands_settings() {
  * Implements hook_node_view.
  */
 function osfreelands_node_view($node, $build_mode = 'full') {
-	if ($node->type == 'freelands_terminal' && $build_mode == 'full') {
-		$url = $node->field_osfl_terminal_url[$node->language][0]['value'];
-		// ping terminal
-		$response = metaverse_framework_http_request($url . 'ping');
-		if ($response->success && $response->code == 200) {
-			$status = 'status';
-			$message = t('Terminal is online');
-		}
-		else {
-			$status = 'error';
-			$message = t('The terminal is not answering : !error', array('!error' => $response->data . ' (' . $response->code . ')'));
-		}
-		$node->content['osfreelands_status'] = array(
-			'#markup' => '<div class="messages ' . $status . '">' . $message . '</div>'
-		);
-		// upate link
-		if (($GLOBALS['user']->uid == $node->uid) || $GLOBALS['user']->uid == 1) {
-			$node->content['osfreelands_updater'] = array(
-				'#type' => 'link',
-				'#title' => t('Update terminal'),
-				'#href' => 'osfreelands/terminals/update/' . $node->nid . '/' . base64_encode($url),
-			);
+	if ($build_mode == 'full') {
+		switch ($node->type) {
+			case 'freelands_terminal':
+				module_load_include('inc', 'osfreelands', 'osfreelands_terminals');
+				osfreelands_add_update_terminal_button($node);
+				break;
+			case 'freelands_parcel':
+				module_load_include('inc', 'osfreelands', 'osfreelands_parcels');
+				osfreelands_add_rent_parcel_button($node);
+				break;
 		}
 	}
 }

@@ -4,5 +4,6 @@ package = Metaverse
 dependencies[] = metaverse_framework
 dependencies[] = entityreference
 dependencies[] = list
+dependencies[] = number
 dependencies[] = date
 core = 7.x

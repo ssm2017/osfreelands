@@ -5,10 +5,6 @@
 // osfreelands is free software and parts of it may contain or be derived from the
 // GNU General Public License or other free or open source software licenses.
 
-
-string url="http://home.ssm2017.com";
-string password = "0000";
-integer website_refresh_time = 3600;
 // *********************************
 //      STRINGS
 // *********************************
@@ -81,6 +77,9 @@ default {
         if (num == RESET) {
             llResetScript();
         }
+        else if (num == SET_ERROR) {
+            state idle;
+        }
         else if (num == HTTP_REQUEST_GET_URL) {
             llOwnerSay(_SYMBOL_ARROW+ " "+ _REQUESTING_URL);
             llSetText(_REQUESTING_URL, <1.0,1.0,0.0>,1);
@@ -88,9 +87,6 @@ default {
         }
         else if (num == SET_PARCELS_LIST) {
             parcels = str;
-        }
-        else if (num == SET_ERROR) {
-            state idle;
         }
     }
 
@@ -117,11 +113,11 @@ state run {
         if (num == RESET) {
             llResetScript();
         }
-        else if (num == SET_PARCELS_LIST) {
-            parcels = str;
-        }
         else if (num == SET_ERROR) {
             state idle;
+        }
+        else if (num == SET_PARCELS_LIST) {
+            parcels = str;
         }
     }
 
@@ -153,16 +149,13 @@ state idle {
         if (num == RESET) {
             llResetScript();
         }
-        else if (num == SET_PARCELS_LIST) {
-            parcels = str;
-        }
     }
 
     http_request(key ID, string Method, string Body) {
         if (Method == "GET") {
             string path = llGetHTTPHeader(ID, "x-path-info");
             if (path == "/ping") {
-                llHTTPResponse(ID, 200, "pong");
+                llHTTPResponse(ID, 200, "idle");
             }
             else {
                 llHTTPResponse(ID, 403, "Access denied !");

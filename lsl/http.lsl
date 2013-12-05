@@ -5,7 +5,6 @@
 // osfreelands is free software and parts of it may contain or be derived from the
 // GNU General Public License or other free or open source software licenses.
 
-
 string url="http://home.ssm2017.com";
 string password = "0000";
 integer website_refresh_time = 3600;
@@ -39,6 +38,8 @@ string _SERVER_ERROR = "Server error";
 // ============================================================
 //      NOTHING SHOULD BE MODIFIED UNDER THIS LINE
 // ============================================================
+string ARGS_SEPARATOR = "||";
+key default_owner;
 // ********************
 //      Constants
 // ********************
@@ -50,6 +51,8 @@ integer TERMINAL_SAVE = 70101;
 integer TERMINAL_SAVED = 70102;
 // http
 integer HTTP_REQUEST_URL_SUCCESS = 70205;
+// users
+integer SET_DEFAULT_OWNER = 70310;
 // *********************
 //      FUNCTIONS
 // *********************
@@ -62,8 +65,8 @@ error(string message) {
 // update server
 string terminal_url = "";
 string outputType = "message";
-key updateTerminalId;
-updateTerminal(string cmd, string args) {
+key call_website_id;
+callWebsite(string cmd, string args) {
     llOwnerSay(_SYMBOL_HOR_BAR_2);
     llOwnerSay(_SYMBOL_ARROW+ " "+ _UPDATING_TERMINAL);
 
@@ -71,10 +74,11 @@ updateTerminal(string cmd, string args) {
     integer keypass = (integer)llFrand(9999)+1;
     string md5pass = llMD5String(password, keypass);
     // sending values
-    updateTerminalId = llHTTPRequest( url+"/metaverse-framework", [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"],
+    call_website_id = llHTTPRequest( url+"/metaverse-framework", [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"],
                     "app=osfreelands"
                     +"&cmd="+ cmd
                     +"&output_type="+outputType
+                    +"&args_separator="+ARGS_SEPARATOR
                     +"&arg="+args
                     );
 }
@@ -123,11 +127,17 @@ default {
         if (num == RESET) {
             llResetScript();
         }
+        else if (num == SET_ERROR) {
+            state idle;
+        }
         else if (num == HTTP_REQUEST_URL_SUCCESS) {
             terminal_url = str;
         }
+        else if (num == SET_DEFAULT_OWNER) {
+            default_owner = id;
+        }
         else if (num == TERMINAL_SAVE) {
-            updateTerminal("save_terminal", "terminal_url="+llStringToBase64(terminal_url));
+            callWebsite("save_terminal", "default_owner="+(string)default_owner+ARGS_SEPARATOR+"terminal_url="+llStringToBase64(terminal_url));
         }
     }
 
@@ -151,20 +161,6 @@ default {
                 error(_UPDATE_ERROR);
                 state idle;
             }
-        }
-    }
-}
-
-// *****************
-//      Run
-// *****************
-state run {
-    link_message(integer sender_num, integer num, string str, key id) {
-        if (num == RESET) {
-            llResetScript();
-        }
-        else if (num == SET_ERROR) {
-            state idle;
         }
     }
 }

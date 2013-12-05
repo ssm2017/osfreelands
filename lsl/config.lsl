@@ -54,6 +54,8 @@ integer READ_NOTECARD = 70501;
 integer NOTECARD_READ = 70502;
 // regions
 integer SET_PARCELS_LIST = 71011;
+// users
+integer SET_DEFAULT_OWNER = 70310;
 // *********************
 //      FUNCTIONS
 // *********************
@@ -91,6 +93,10 @@ string parseParcels() {
 //  INIT PROGRAM
 // ***********************
 default {
+    state_entry() {
+        default_owner = llGetOwner();
+    }
+
     link_message(integer sender_num, integer num, string str, key id) {
         if (num == RESET) {
             llResetScript();
@@ -131,19 +137,19 @@ state readNotecard {
                         string cfg_value = llStringTrim(llList2String( parsed, 1 ), STRING_TRIM);
                         if (cfg_value != "") {
                             // fill the values
-                            if ( cfg_command == "default_owner" ) {
+                            if (cfg_command == "default_owner") {
                                 default_owner = cfg_value;
                                 llOwnerSay(_SYMBOL_RIGHT+ " "+ "\"default_owner\""+ " "+ _SET_TO + " : "+default_owner);
                             }
-                            else if ( cfg_command == "default_title" ) {
+                            else if (cfg_command == "default_title") {
                                 default_title = cfg_value;
                                 llOwnerSay(_SYMBOL_RIGHT+ " "+ "\"default_title\""+ " "+ _SET_TO + " : "+default_title);
                             }
-                            else if ( cfg_command == "default_desc" ) {
+                            else if (cfg_command == "default_desc") {
                                 default_desc = cfg_value;
                                 llOwnerSay(_SYMBOL_RIGHT+ " "+ "\"default_desc\""+ " "+ _SET_TO + " : "+default_desc);
                             }
-                            else if ( cfg_command == "parcel" ) {
+                            else if (cfg_command == "parcel") {
                                 parcels += cfg_value;
                                 llOwnerSay(_SYMBOL_RIGHT+ " "+ "\"parcel\""+ " "+ _SET_TO + " : "+cfg_value);
                             }
@@ -165,8 +171,9 @@ state readNotecard {
                     error(_MISSING_VARS);
                     state idle;
                 }
-                llMessageLinked(LINK_THIS, NOTECARD_READ, "", NULL_KEY);
                 llMessageLinked(LINK_THIS, SET_PARCELS_LIST, parseParcels(), NULL_KEY);
+                llMessageLinked(LINK_THIS, SET_DEFAULT_OWNER, "", default_owner);
+                llMessageLinked(LINK_THIS, NOTECARD_READ, "", NULL_KEY);
                 state run;
             }
         }
