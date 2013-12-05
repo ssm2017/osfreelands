@@ -67,7 +67,7 @@ function osfreelands_save_terminal($values, $args = array(), $is_new = TRUE) {
 	else if (module_exists('metaverse_user')) {
 		$query = new EntityFieldQuery();
 		$entities = $query->entityCondition('entity_type', 'user')
-				->fieldCondition('field_mu_user_uuid', 'value', $values->ownerkey)
+				->fieldCondition('field_mu_user_uuid', 'uuid_field', $values->ownerkey)
 				->execute();
 		if (isset($entities['user'])) {
 			reset($entities['user']);

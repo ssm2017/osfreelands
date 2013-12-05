@@ -290,10 +290,9 @@ function osfreelands_batch_get_parcel_infos($settings, &$context) {
 		$parcels_nids = osfreelands_get_parcels_by_parcel_key(array('parcel_key' => $parcel_infos->uuid));
 		if (is_null($parcels_nids)) {
 			// create a new parcel
-			$parcel_infos->end_time = ($duration > 0) ? date() + (86400 * $duration) : NULL;
 			$parcel_infos->owner = $default_owner;
 			$saved_parcel = osfreelands_save_parcel($parcel_infos);
-			$result = t('Parcel at !position created.', array('!position' => $parcel_location));
+			$result = t('Parcel named !name at !position created.', array('!name' => $parcel_infos->name, '!position' => $parcel_location));
 		}
 		else {
 			// update parcel

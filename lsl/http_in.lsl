@@ -78,7 +78,7 @@ string rentParcel(string args) {
     list data = llParseString2List(args, ["+"],[]);
     vector parcel_coords = (vector)llUnescapeURL(llList2String(data, 0));
     key owner_uuid = llList2Key(data, 1);
-    list rules =[PARCEL_DETAILS_OWNER, owner_uuid];
+    list rules =[PARCEL_DETAILS_OWNER, owner_uuid, PARCEL_DETAILS_GROUP, NULL_KEY];
     osSetParcelDetails(parcel_coords, rules);
     return getParcelInfos((string)parcel_coords);
 }
