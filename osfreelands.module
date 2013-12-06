@@ -123,6 +123,46 @@ function osfreelands_views_api() {
 }
 
 /**
+ * Implements hook_cron.
+ */
+function osfreelands_cron() {
+	module_load_include('inc', 'osfreelands', 'osfreelands_terminals');
+	// get expired parcels
+	$query = new EntityFieldQuery();
+	$entities = $query->entityCondition('entity_type', 'node')
+			->propertyCondition('type', 'freelands_parcel')
+			->fieldCondition('field_osfl_end_time', 'value', time(), '<=')
+			->execute();
+	if (isset($entities['node'])) {
+		foreach ($nodes_ids as $nid) {
+			// get the parcel
+			$parcel = node_load($nid);
+			// get the terminal
+			$terminal = osfreelands_ping_terminal($parcel->field_osfl_term_nid[$parcel->language][0]['target_id']);
+			if ($terminal->online_status != 'online') {
+				watchdog('freelands', 'Terminal !name is not responding.', array('!name' => $terminal->title), WATCHDOG_ERROR, $link = l($terminal->title, 'node/'.$terminal->nid));
+				continue;
+			}
+			$default_owner = $terminal->field_osfl_term_default_owner[$terminal->language][0]['uuid_field'];
+			// get the url
+			$url = $terminal->field_osfl_term_url[$terminal->language][0]['value'];
+			// tell it inworld
+			$response = metaverse_framework_http_request($url . 'reset-parcel?'.urlencode($parcel->field_osfl_parcel_location[$parcel->language][0]['value']));
+			if ($response->success && $response->code == 200) {
+				$parcel->field_osfl_parcel_status[$parcel->language][0]['value'] = 0;
+				$parcel->field_osfl_end_time[$parcel->language][0]['value'] = NULL;
+				$parcel->field_osfl_parcel_owner[$parcel->language][0]['uuid_field'] = $default_owner;
+				node_save($parcel);
+				watchdog('freelands', 'Parcel !name expired.', array('!name' => $parcel->title), WATCHDOG_NOTICE, $link = l($parcel->title, 'node/'.$parcel->nid));
+			}
+			else {
+				watchdog('freelands', 'Error changing parcel inworld details.', array(), WATCHDOG_ERROR, $link = l($parcel->title, 'node/'.$parcel->nid));
+			}
+		}
+	}
+}
+
+/**
  * Implements hook_node_view.
  */
 function osfreelands_node_view($node, $build_mode = 'full') {

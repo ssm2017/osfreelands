@@ -37,6 +37,9 @@ string _SERVER_ERROR = "Server error";
 // ============================================================
 string terminal_url = "";
 string parcels = "";
+string default_owner;
+string default_title = "Free land";
+string default_desc = "This place is for free";
 // ********************
 //      Constants
 // ********************
@@ -46,8 +49,12 @@ integer SET_ERROR = 70016;
 // http
 integer HTTP_REQUEST_GET_URL = 70204;
 integer HTTP_REQUEST_URL_SUCCESS = 70205;
-// parcels
+// regions
 integer SET_PARCELS_LIST = 71011;
+integer SET_DEFAULT_TITLE = 71021;
+integer SET_DEFAULT_DESC = 71023;
+// users
+integer SET_DEFAULT_OWNER = 70310;
 // *********************
 //      FUNCTIONS
 // *********************
@@ -78,11 +85,11 @@ string getParcelInfos(string parcel_coords_str) {
     // get the parcel infos
     list details = llGetParcelDetails(parcel_coords, [PARCEL_DETAILS_NAME, PARCEL_DETAILS_DESC, PARCEL_DETAILS_OWNER, PARCEL_DETAILS_AREA, PARCEL_DETAILS_ID]);
     string output = "{"
-            + "\"name\":\"" + llList2String(details ,0) + "\","
-            + "\"desc\":\"" + llList2String(details ,1) + "\","
-            + "\"owner\":\"" + llList2String(details ,2) + "\","
-            + "\"area\":\"" + llList2String(details ,3) + "\","
-            + "\"uuid\":\"" + llList2String(details ,4) + "\"}";
+            + "\"parcel_name\":\"" + llList2String(details ,0) + "\","
+            + "\"parcel_desc\":\"" + llList2String(details ,1) + "\","
+            + "\"parcel_owner\":\"" + llList2String(details ,2) + "\","
+            + "\"parcel_area\":\"" + llList2String(details ,3) + "\","
+            + "\"parcel_uuid\":\"" + llList2String(details ,4) + "\"}";
     return llStringToBase64(output);
 }
 // rent parcel
@@ -91,25 +98,52 @@ string rentParcel(vector parcel_coords, key owner_uuid) {
     osSetParcelDetails(parcel_coords, rules);
     return getParcelInfos((string)parcel_coords);
 }
+// reset parcel
+string resetParcel(string parcel_coords_str) {
+    // retrieve the parcel coords
+    vector parcel_coords = (vector)llUnescapeURL(parcel_coords_str);
+    list rules =[
+            PARCEL_DETAILS_NAME, default_title,
+            PARCEL_DETAILS_DESC, default_desc,
+            PARCEL_DETAILS_OWNER, default_owner,
+            PARCEL_DETAILS_GROUP, NULL_KEY];
+    osSetParcelDetails(parcel_coords, rules);
+    return getParcelInfos((string)parcel_coords);
+}
+// manage messages
+manageMessages(integer num, string str, key id) {
+    if (num == RESET) {
+        llResetScript();
+    }
+    else if (num == HTTP_REQUEST_GET_URL) {
+        llOwnerSay(_SYMBOL_ARROW+ " "+ _REQUESTING_URL);
+        llSetText(_REQUESTING_URL, <1.0,1.0,0.0>,1);
+        llRequestURL();
+    }
+    else if (num == SET_PARCELS_LIST) {
+        parcels = str;
+    }
+    else if (num == SET_DEFAULT_OWNER) {
+        default_owner = id;
+    }
+    else if (num == SET_DEFAULT_TITLE) {
+        default_title = str;
+    }
+    else if (num == SET_DEFAULT_DESC) {
+        default_desc = str;
+    }
+}
 // ***********************
 //  INIT PROGRAM
 // ***********************
 default {
 
     link_message(integer sender_num, integer num, string str, key id) {
-        if (num == RESET) {
-            llResetScript();
-        }
-        else if (num == SET_ERROR) {
+        if (num == SET_ERROR) {
             state idle;
         }
-        else if (num == HTTP_REQUEST_GET_URL) {
-            llOwnerSay(_SYMBOL_ARROW+ " "+ _REQUESTING_URL);
-            llSetText(_REQUESTING_URL, <1.0,1.0,0.0>,1);
-            llRequestURL();
-        }
-        else if (num == SET_PARCELS_LIST) {
-            parcels = str;
+        else {
+            manageMessages(num, str, id);
         }
     }
 
@@ -133,14 +167,11 @@ default {
 // *****************
 state run {
     link_message(integer sender_num, integer num, string str, key id) {
-        if (num == RESET) {
-            llResetScript();
-        }
-        else if (num == SET_ERROR) {
+        if (num == SET_ERROR) {
             state idle;
         }
-        else if (num == SET_PARCELS_LIST) {
-            parcels = str;
+        else {
+            manageMessages(num, str, id);
         }
     }
 
@@ -167,6 +198,9 @@ state run {
                 else {
                     llHTTPResponse(ID, 403, "Access denied !");
                 }
+            }
+            else if (path == "/reset-parcel") {
+                llHTTPResponse(ID, 200, resetParcel(right(llGetHTTPHeader(ID, "x-query-string"), "=")));
             }
             else {
                 llHTTPResponse(ID, 403, "Access denied !");

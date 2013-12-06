@@ -54,6 +54,8 @@ integer READ_NOTECARD = 70501;
 integer NOTECARD_READ = 70502;
 // regions
 integer SET_PARCELS_LIST = 71011;
+integer SET_DEFAULT_TITLE = 71021;
+integer SET_DEFAULT_DESC = 71023;
 // users
 integer SET_DEFAULT_OWNER = 70310;
 // *********************
@@ -173,6 +175,8 @@ state readNotecard {
                 }
                 llMessageLinked(LINK_THIS, SET_PARCELS_LIST, parseParcels(), NULL_KEY);
                 llMessageLinked(LINK_THIS, SET_DEFAULT_OWNER, "", default_owner);
+                llMessageLinked(LINK_THIS, SET_DEFAULT_TITLE, default_title, NULL_KEY);
+                llMessageLinked(LINK_THIS, SET_DEFAULT_DESC, default_desc, NULL_KEY);
                 llMessageLinked(LINK_THIS, NOTECARD_READ, "", NULL_KEY);
                 state run;
             }
