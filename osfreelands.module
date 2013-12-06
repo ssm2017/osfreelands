@@ -98,14 +98,14 @@ function osfreelands_settings() {
 	);
   $form['osfreelands_roles_fieldset']['osfreelands_terminal_role'] = array(
     '#type' => 'select',
-    '#title' => t('Assigned role to terminal owners'),
+    '#title' => t('Terminal owners'),
     '#default_value' => variable_get('osfreelands_terminal_role', 0),
     '#options' => $roles,
     '#description' => t('This role is automatically assigned to terminal owners.'),
   );
 	$form['osfreelands_roles_fieldset']['osfreelands_parcel_role'] = array(
     '#type' => 'select',
-    '#title' => t('Assigned role to parcel owners'),
+    '#title' => t('Parcel owners'),
     '#default_value' => variable_get('osfreelands_parcel_role', 0),
     '#options' => $roles,
     '#description' => t('This role is automatically assigned to parcel owners.'),
@@ -208,7 +208,7 @@ function osfreelands_get_uuid_by_uid($uid) {
 	}
 	else if (module_exists('metaverse_user')) {
 		$user = user_load($uid);
-		$uuid = isset($user->field_mu_user_uuid[LANGUAGE_NONE][0]['uuid_field']) ? $user->field_mu_user_uuid[LANGUAGE_NONE][0]['uuid_field'] : NULL;
+		$uuid = isset($user->field_mu_user_uuid[LANGUAGE_NONE][0]['uuid_field']) ? $user->field_mu_user_uuid[LANGUAGE_NONE][0]['uuid_field'] : FALSE;
 	}
 	return $uuid;
 }

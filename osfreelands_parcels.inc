@@ -166,19 +166,7 @@ function osfreelands_check_parcel_rentable_by_uid(&$parcel, $uid) {
 	$answer->message = t('This parcel is not available for renting.');
 
 	// check if the user is linked on the grid
-	$user_valid = FALSE;
-	if (module_exists('d4os_ui_users')) {
-		$uuid = db_query("SELECT uuid FROM {d4os_ui_users} WHERE uid = :uid", array(':uid' => $uid))->fetchField();
-		if ($uuid !== FALSE) {
-			$user_valid = TRUE;
-		}
-	}
-	else if (module_exists('metaverse_user')) {
-		$uuid = metaverse_user_get_uuid($uid);
-		if (!is_null($uuid) && $uuid != UUID_ZERO) {
-			$user_valid = TRUE;
-		}
-	}
+	$user_valid = osfreelands_get_uuid_by_uid($uid);
 
 	if (!$user_valid) {
 		$answer->status = 'error';
