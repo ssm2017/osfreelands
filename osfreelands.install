@@ -183,6 +183,31 @@ function _osfreelands_installed_fields($node_type) {
 						'max_length' => 13
 					)
 				),
+				// last_online
+				'osfl_last_online' => array(
+					'field_name'  => 'field_osfl_last_online',
+					'type'        => 'datestamp',
+					'module'      => 'date',
+					'active'      => 1,
+					'locked'      => 1,
+					'cardinality' => 1,
+					'deleted'     => 0,
+					'settings'    => array(
+						'granularity'   => Array(
+							'month'   => 'month',
+							'day'     => 'day',
+							'hour'    => 'hour',
+							'minute'  => 'minute',
+							'year'    => 'year',
+							'second'  => 0,
+						),
+						'tz_handling'   => 'site',
+						'timezone_db'   => 'UTC',
+						'cache_enabled' => 0,
+						'cache_count'   => 4,
+						'todate'        => '',
+					),
+				),
 			);
 			break;
 		case 'freelands_parcel':
@@ -370,6 +395,32 @@ function _osfreelands_installed_instances($node_type) {
 							'max_length' => 13
 						)
 					)
+				),
+				// last_online
+				'osfl_last_online' => array(
+					'field_name'  => 'field_osfl_last_online',
+					'label'       => t('Last online'),
+					'required'    => FALSE,
+					'widget' => array(
+						'type'     => 'date_select',
+						'module'   => 'date',
+						'settings' => array(
+							'input_format'  => 'm/d/Y - H:i:s',
+							'year_range'    => '0:+3',
+							'increment'     => 15,
+						),
+					),
+					'settings' => array(
+						'default_value'   => 'now',
+						'default_value2'  => 'same',
+					),
+					'display' => array(
+						'default' => array(
+							'label'   => 'inline',
+							'type'    => 'date_default',
+							'module'  => 'date',
+						),
+					),
 				),
 			);
 			break;

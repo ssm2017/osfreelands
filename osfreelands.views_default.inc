@@ -93,12 +93,6 @@ function osfreelands_terminals_views() {
 	$handler->display->display_options['relationships']['uid']['id'] = 'uid';
 	$handler->display->display_options['relationships']['uid']['table'] = 'node';
 	$handler->display->display_options['relationships']['uid']['field'] = 'uid';
-	/* Field: Content: Title */
-	$handler->display->display_options['fields']['title']['id'] = 'title';
-	$handler->display->display_options['fields']['title']['table'] = 'node';
-	$handler->display->display_options['fields']['title']['field'] = 'title';
-	$handler->display->display_options['fields']['title']['alter']['word_boundary'] = FALSE;
-	$handler->display->display_options['fields']['title']['alter']['ellipsis'] = FALSE;
 	/* Field: User: Name */
 	$handler->display->display_options['fields']['name']['id'] = 'name';
 	$handler->display->display_options['fields']['name']['table'] = 'users';
@@ -107,6 +101,23 @@ function osfreelands_terminals_views() {
 	$handler->display->display_options['fields']['name']['label'] = 'Owner';
 	$handler->display->display_options['fields']['name']['exclude'] = TRUE;
 	$handler->display->display_options['fields']['name']['element_label_colon'] = FALSE;
+	/* Field: Content: Title */
+	$handler->display->display_options['fields']['title']['id'] = 'title';
+	$handler->display->display_options['fields']['title']['table'] = 'node';
+	$handler->display->display_options['fields']['title']['field'] = 'title';
+	$handler->display->display_options['fields']['title']['alter']['word_boundary'] = FALSE;
+	$handler->display->display_options['fields']['title']['alter']['ellipsis'] = FALSE;
+	/* Field: Content: Last online */
+	$handler->display->display_options['fields']['field_osfl_last_online']['id'] = 'field_osfl_last_online';
+	$handler->display->display_options['fields']['field_osfl_last_online']['table'] = 'field_data_field_osfl_last_online';
+	$handler->display->display_options['fields']['field_osfl_last_online']['field'] = 'field_osfl_last_online';
+	$handler->display->display_options['fields']['field_osfl_last_online']['settings'] = array(
+		'format_type' => 'short',
+		'fromto' => 'both',
+		'multiple_number' => '',
+		'multiple_from' => '',
+		'multiple_to' => '',
+	);
 	/* Field: Content: Edit link */
 	$handler->display->display_options['fields']['edit_node']['id'] = 'edit_node';
 	$handler->display->display_options['fields']['edit_node']['table'] = 'views_entity_node';
@@ -121,10 +132,11 @@ function osfreelands_terminals_views() {
 	$handler->display->display_options['fields']['delete_node']['label'] = '';
 	$handler->display->display_options['fields']['delete_node']['element_label_colon'] = FALSE;
 	$handler->display->display_options['fields']['delete_node']['hide_empty'] = TRUE;
-	/* Sort criterion: Content: Title */
-	$handler->display->display_options['sorts']['title']['id'] = 'title';
-	$handler->display->display_options['sorts']['title']['table'] = 'node';
-	$handler->display->display_options['sorts']['title']['field'] = 'title';
+	/* Sort criterion: Content: Last online (field_osfl_last_online) */
+	$handler->display->display_options['sorts']['field_osfl_last_online_value']['id'] = 'field_osfl_last_online_value';
+	$handler->display->display_options['sorts']['field_osfl_last_online_value']['table'] = 'field_data_field_osfl_last_online';
+	$handler->display->display_options['sorts']['field_osfl_last_online_value']['field'] = 'field_osfl_last_online_value';
+	$handler->display->display_options['sorts']['field_osfl_last_online_value']['order'] = 'DESC';
 	/* Filter criterion: Content: Published */
 	$handler->display->display_options['filters']['status']['id'] = 'status';
 	$handler->display->display_options['filters']['status']['table'] = 'node';

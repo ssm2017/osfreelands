@@ -91,6 +91,9 @@ function osfreelands_save_terminal($values, $args = array(), $is_new = TRUE) {
 	$node->field_osfl_term_default_owner[$node->language][0]['uuid_field'] = $args['default_owner'];
 	$node->field_osfl_region_name[$node->language][0]['value'] = $values->region_name;
 	$node->field_osfl_term_location[$node->language][0]['value'] = '<'.floor($values->position_x).','.floor($values->position_y).','.floor($values->position_z).'>';
+	if (isset($values->last_online)) {
+		$node->field_osfl_last_online[$node->language][0]['value'] = $values->last_online;
+	}
 
 	node_save($node);
 	return $node;
@@ -160,32 +163,10 @@ function osfreelands_delete_terminals($terminals_nids) {
 }
 
 function osfreelands_add_update_terminal_button(&$node) {
-	$url = $node->field_osfl_term_url[$node->language][0]['value'];
 	// ping terminal
-	$response = metaverse_framework_http_request($url . 'ping');
-	if ($response->success && $response->code == 200) {
-		if ($response->data == 'pong') {
-			$status = 'status';
-			$message = t('The terminal is answering.');
-		}
-		else if ($response->data == 'idle') {
-			$status = 'warning';
-			$message = t('Terminal is online but it is stopped (needs a reset)');
-		}
-		else {
-			$status = 'error';
-			$message = t('Terminal is online but there is an error : !error', array('!error' => $response->data));
-		}
-	}
-	else {
-		$status = 'error';
-		$message = t('The terminal is not answering : !error', array('!error' => '(' . $response->code . ')'));
-	}
-	$node->content['osfreelands_status'] = array(
-		'#markup' => '<div class="messages ' . $status . '">' . $message . '</div>'
-	);
+	$terminal = osfreelands_ping_terminal($node->nid);
 	// upate link
-	if (($GLOBALS['user']->uid == $node->uid) || $GLOBALS['user']->uid == 1 && $status == 'status') {
+	if (($GLOBALS['user']->uid == $node->uid) || $GLOBALS['user']->uid == 1 && $terminal->online_status == 'online') {
 		$node->content['osfreelands_updater'] = array(
 			'#type' => 'link',
 			'#title' => t('Update terminal'),
@@ -239,12 +220,14 @@ function osfreelands_inworld_save_terminal (&$sl, $args) {
 		else {
 			// update terminal
 			$sl->nid = $terminals[0];
+			$sl->last_online = time();
 			$terminal = osfreelands_save_terminal($sl, $args, FALSE);
 			drupal_set_message(t('terminal updated'));
 		}
 	}
 	if (is_null($terminals)) {
 		// create a new terminal
+		$sl->last_online = time();
 		$terminal = osfreelands_save_terminal($sl, $args);
 		drupal_set_message(t('terminal created'));
 	}
@@ -272,21 +255,24 @@ function osfreelands_ping_terminal($terminal_nid) {
 	$response = metaverse_framework_http_request($url . 'ping');
 	if ($response->success && $response->code == 200) {
 		if ($response->data == 'pong') {
+			// save the last online value
+			$terminal->last_online = time();
+			node_save($terminal);
 			drupal_set_message(t('The terminal is answering.'));
-			$terminal->status = 'online';
+			$terminal->online_status = 'online';
 		}
 		else if ($response->data == 'idle') {
 			drupal_set_message(t('Terminal is online but it is stopped (needs a reset)'), 'warning');
-			$terminal->status = 'idle';
+			$terminal->online_status = 'idle';
 		}
 		else {
 			drupal_set_message(t('Terminal is online but there is an error : !error', array('!error' => $response->data)), 'error');
-			$terminal->status = 'error';
+			$terminal->online_status = 'error';
 		}
 	}
 	else {
 		drupal_set_message(t('The terminal is not answering : !error', array('!error' => $response->data . ' (' . $response->code . ')')), 'error');
-		$terminal->status = 'offline';
+		$terminal->online_status = 'offline';
 	}
 	return $terminal;
 }
