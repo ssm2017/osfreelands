@@ -199,3 +199,35 @@ function osfreelands_set_role($uid, $role) {
   // assign the role
   db_query("INSERT INTO {users_roles} (rid, uid) VALUES (:rid, :uid)", array(':rid' => $rid, ':uid' => $uid));
 }
+
+function osfreelands_get_uuid_by_uid($uid) {
+	$uuid = FALSE;
+	if (module_exists('d4os_ui_users')) {
+		// get the uid of the terminal owner
+		$uuid = db_query("SELECT UUID FROM {d4os_ui_users} WHERE uid = :uid", array(':uid' => $uid))->fetchField();
+	}
+	else if (module_exists('metaverse_user')) {
+		$user = user_load($uid);
+		$uuid = isset($user->field_mu_user_uuid[LANGUAGE_NONE][0]['uuid_field']) ? $user->field_mu_user_uuid[LANGUAGE_NONE][0]['uuid_field'] : NULL;
+	}
+	return $uuid;
+}
+
+function osfreelands_get_uid_by_uuid($uuid) {
+	$uid = FALSE;
+	if (module_exists('d4os_ui_users')) {
+		// get the uid of the terminal owner
+		$uid = db_query("SELECT uid FROM {d4os_ui_users} WHERE UUID = :uuid", array(':uuid' => $uuid))->fetchField();
+	}
+	else if (module_exists('metaverse_user')) {
+		$query = new EntityFieldQuery();
+		$entities = $query->entityCondition('entity_type', 'user')
+				->fieldCondition('field_mu_user_uuid', 'uuid_field', $uuid)
+				->execute();
+		if (isset($entities['user'])) {
+			reset($entities['user']);
+			$uid = key($entities['user']);
+		}
+	}
+	return $uid;
+}

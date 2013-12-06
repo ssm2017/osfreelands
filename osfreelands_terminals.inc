@@ -57,22 +57,9 @@ function osfreelands_save_terminal($values, $args = array(), $is_new = TRUE) {
 	// get the owner uid if possible
 	$node->uid = 1;
 
-	if (module_exists('d4os_ui_users')) {
-		// get the uid of the terminal owner
-		$uid = db_query("SELECT uid FROM {d4os_ui_users} WHERE UUID = :uuid", array(':uuid' => $values->ownerkey))->fetchField();
-		if ($uid !== FALSE && !is_null($uid)) {
-			$node->uid = $uid;
-		}
-	}
-	else if (module_exists('metaverse_user')) {
-		$query = new EntityFieldQuery();
-		$entities = $query->entityCondition('entity_type', 'user')
-				->fieldCondition('field_mu_user_uuid', 'uuid_field', $values->ownerkey)
-				->execute();
-		if (isset($entities['user'])) {
-			reset($entities['user']);
-			$node->uid = key($entities['user']);
-		}
+	$uid = osfreelands_get_uid_by_uuid($values->ownerkey);
+	if ($uid) {
+		$node->uid = $uid;
 	}
 
 	// fill other values
