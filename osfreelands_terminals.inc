@@ -102,7 +102,8 @@ function osfreelands_save_terminal($values, $args = array(), $is_new = TRUE) {
 function osfreelands_update_terminal($nid) {
 	// get the terminal
 	$terminal = osfreelands_ping_terminal($nid);
-	if ($terminal->status != 'online') {
+	dsm($terminal);
+	if ($terminal->online_status != 'online') {
 		drupal_goto('node/'.$nid);
 	}
 

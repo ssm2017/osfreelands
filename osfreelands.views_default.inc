@@ -93,6 +93,11 @@ function osfreelands_terminals_views() {
 	$handler->display->display_options['relationships']['uid']['id'] = 'uid';
 	$handler->display->display_options['relationships']['uid']['table'] = 'node';
 	$handler->display->display_options['relationships']['uid']['field'] = 'uid';
+	/* Field: Content: Region name */
+	$handler->display->display_options['fields']['field_osfl_region_name']['id'] = 'field_osfl_region_name';
+	$handler->display->display_options['fields']['field_osfl_region_name']['table'] = 'field_data_field_osfl_region_name';
+	$handler->display->display_options['fields']['field_osfl_region_name']['field'] = 'field_osfl_region_name';
+	$handler->display->display_options['fields']['field_osfl_region_name']['label'] = 'Region';
 	/* Field: User: Name */
 	$handler->display->display_options['fields']['name']['id'] = 'name';
 	$handler->display->display_options['fields']['name']['table'] = 'users';
@@ -235,22 +240,30 @@ function osfreelands_parcels_views() {
 	$handler->display->display_options['relationships']['field_osfl_term_nid_target_id']['id'] = 'field_osfl_term_nid_target_id';
 	$handler->display->display_options['relationships']['field_osfl_term_nid_target_id']['table'] = 'field_data_field_osfl_term_nid';
 	$handler->display->display_options['relationships']['field_osfl_term_nid_target_id']['field'] = 'field_osfl_term_nid_target_id';
+	$handler->display->display_options['relationships']['field_osfl_term_nid_target_id']['label'] = 'terminal';
+	/* Field: Content: Region name */
+	$handler->display->display_options['fields']['field_osfl_region_name']['id'] = 'field_osfl_region_name';
+	$handler->display->display_options['fields']['field_osfl_region_name']['table'] = 'field_data_field_osfl_region_name';
+	$handler->display->display_options['fields']['field_osfl_region_name']['field'] = 'field_osfl_region_name';
+	$handler->display->display_options['fields']['field_osfl_region_name']['relationship'] = 'field_osfl_term_nid_target_id';
+	$handler->display->display_options['fields']['field_osfl_region_name']['label'] = 'Region';
 	/* Field: Content: Title */
 	$handler->display->display_options['fields']['title']['id'] = 'title';
 	$handler->display->display_options['fields']['title']['table'] = 'node';
 	$handler->display->display_options['fields']['title']['field'] = 'title';
+	$handler->display->display_options['fields']['title']['label'] = 'Name';
 	$handler->display->display_options['fields']['title']['alter']['word_boundary'] = FALSE;
 	$handler->display->display_options['fields']['title']['alter']['ellipsis'] = FALSE;
+	/* Field: Content: Status */
+	$handler->display->display_options['fields']['field_osfl_parcel_status']['id'] = 'field_osfl_parcel_status';
+	$handler->display->display_options['fields']['field_osfl_parcel_status']['table'] = 'field_data_field_osfl_parcel_status';
+	$handler->display->display_options['fields']['field_osfl_parcel_status']['field'] = 'field_osfl_parcel_status';
 	/* Field: Content: Title */
 	$handler->display->display_options['fields']['title_1']['id'] = 'title_1';
 	$handler->display->display_options['fields']['title_1']['table'] = 'node';
 	$handler->display->display_options['fields']['title_1']['field'] = 'title';
 	$handler->display->display_options['fields']['title_1']['relationship'] = 'field_osfl_term_nid_target_id';
 	$handler->display->display_options['fields']['title_1']['label'] = 'Terminal';
-	/* Field: Content: Status */
-	$handler->display->display_options['fields']['field_osfl_parcel_status']['id'] = 'field_osfl_parcel_status';
-	$handler->display->display_options['fields']['field_osfl_parcel_status']['table'] = 'field_data_field_osfl_parcel_status';
-	$handler->display->display_options['fields']['field_osfl_parcel_status']['field'] = 'field_osfl_parcel_status';
 	/* Field: Content: Edit link */
 	$handler->display->display_options['fields']['edit_node']['id'] = 'edit_node';
 	$handler->display->display_options['fields']['edit_node']['table'] = 'views_entity_node';
@@ -293,6 +306,20 @@ function osfreelands_parcels_views() {
 		1 => 0,
 		3 => 0,
 		4 => 0,
+	);
+	/* Filter criterion: Content: Region name (field_osfl_region_name) */
+	$handler->display->display_options['filters']['field_osfl_region_name_value']['id'] = 'field_osfl_region_name_value';
+	$handler->display->display_options['filters']['field_osfl_region_name_value']['table'] = 'field_data_field_osfl_region_name';
+	$handler->display->display_options['filters']['field_osfl_region_name_value']['field'] = 'field_osfl_region_name_value';
+	$handler->display->display_options['filters']['field_osfl_region_name_value']['relationship'] = 'field_osfl_term_nid_target_id';
+	$handler->display->display_options['filters']['field_osfl_region_name_value']['exposed'] = TRUE;
+	$handler->display->display_options['filters']['field_osfl_region_name_value']['expose']['operator_id'] = 'field_osfl_region_name_value_op';
+	$handler->display->display_options['filters']['field_osfl_region_name_value']['expose']['label'] = 'Region';
+	$handler->display->display_options['filters']['field_osfl_region_name_value']['expose']['operator'] = 'field_osfl_region_name_value_op';
+	$handler->display->display_options['filters']['field_osfl_region_name_value']['expose']['identifier'] = 'field_osfl_region_name_value';
+	$handler->display->display_options['filters']['field_osfl_region_name_value']['expose']['remember_roles'] = array(
+		2 => '2',
+		1 => 0,
 	);
 
 	/* Display: Page */
