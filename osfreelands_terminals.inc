@@ -14,7 +14,7 @@ function osfreelands_get_terminals_by_key($values) {
 	$query = new EntityFieldQuery();
 	$entities = $query->entityCondition('entity_type', 'node')
 			->propertyCondition('type', 'freelands_terminal')
-			->fieldCondition('field_osfl_term_key', 'value', $values['terminal_key'])
+			->fieldCondition('field_osfl_term_key', 'uuid_field', $values['terminal_key'])
 			->execute();
 	if (isset($entities['node'])) {
 		$nodes_ids = array();
@@ -31,7 +31,7 @@ function osfreelands_get_terminals_by_region($values) {
 	$query = new EntityFieldQuery();
 	$entities = $query->entityCondition('entity_type', 'node')
 			->propertyCondition('type', 'freelands_terminal')
-			->fieldCondition('field_osfl_term_owner', 'value', $values['owner_key'])
+			->fieldCondition('field_osfl_term_owner', 'uuid_field', $values['owner_key'])
 			->fieldCondition('field_osfl_region_name', 'value', $values['region_name'])
 			->execute();
 	if (isset($entities['node'])) {
@@ -83,12 +83,12 @@ function osfreelands_save_terminal($values, $args = array(), $is_new = TRUE) {
 	$node->body[$node->language][0]['summary'] = text_summary('');
 	$node->body[$node->language][0]['format'] = 'plain_text';
 
-	$node->field_osfl_term_key[$node->language][0]['value'] = $values->objectkey;
+	$node->field_osfl_term_key[$node->language][0]['uuid_field'] = $values->objectkey;
 	if (isset($args['terminal_url'])) {
 		$node->field_osfl_term_url[$node->language][0]['value'] = base64_decode($args['terminal_url']);
 	}
-	$node->field_osfl_term_owner[$node->language][0]['value'] = $values->ownerkey;
-	$node->field_osfl_term_default_owner[$node->language][0]['value'] = $args['default_owner'];
+	$node->field_osfl_term_owner[$node->language][0]['uuid_field'] = $values->ownerkey;
+	$node->field_osfl_term_default_owner[$node->language][0]['uuid_field'] = $args['default_owner'];
 	$node->field_osfl_region_name[$node->language][0]['value'] = $values->region_name;
 	$node->field_osfl_term_location[$node->language][0]['value'] = '<'.floor($values->position_x).','.floor($values->position_y).','.floor($values->position_z).'>';
 
@@ -125,7 +125,7 @@ function osfreelands_update_terminal($nid) {
 				'parcel_location' => $parcel,
 				'terminal_url' => $url,
 				'terminal_nid' => $nid,
-				'default_owner' => $terminal->field_osfl_term_default_owner[$terminal->language][0]['value']
+				'default_owner' => $terminal->field_osfl_term_default_owner[$terminal->language][0]['uuid_field']
 			);
 			$operations[] = array('osfreelands_batch_get_parcel_infos', array($settings));
 		}

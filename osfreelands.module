@@ -114,6 +114,15 @@ function osfreelands_settings() {
 }
 
 /**
+ * Implements hook_views_api.
+ */
+function osfreelands_views_api() {
+  return array(
+    'api' => 3
+  );
+}
+
+/**
  * Implements hook_node_view.
  */
 function osfreelands_node_view($node, $build_mode = 'full') {

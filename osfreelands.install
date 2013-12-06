@@ -117,15 +117,12 @@ function _osfreelands_installed_fields($node_type) {
 				// terminal_key
 				'osfl_term_key' => array(
 					'field_name' => 'field_osfl_term_key',
-					'type' => 'text',
-					'module' => 'text',
+					'type' => 'uuid_field',
+					'module' => 'uuid_field',
 					'active' => 1,
 					'locked' => 1,
 					'cardinality' => 1,
 					'deleted' => 0,
-					'settings' => array(
-						'max_length' => 40
-					)
 				),
 				// terminal_url
 				'osfl_term_url' => array(
@@ -143,28 +140,22 @@ function _osfreelands_installed_fields($node_type) {
 				// owner
 				'osfl_term_owner' => array(
 					'field_name' => 'field_osfl_term_owner',
-					'type' => 'text',
-					'module' => 'text',
+					'type' => 'uuid_field',
+					'module' => 'uuid_field',
 					'active' => 1,
 					'locked' => 1,
 					'cardinality' => 1,
 					'deleted' => 0,
-					'settings' => array(
-						'max_length' => 40
-					)
 				),
 				// default owner
 				'osfl_term_default_owner' => array(
 					'field_name' => 'field_osfl_term_default_owner',
-					'type' => 'text',
-					'module' => 'text',
+					'type' => 'uuid_field',
+					'module' => 'uuid_field',
 					'active' => 1,
 					'locked' => 1,
 					'cardinality' => 1,
 					'deleted' => 0,
-					'settings' => array(
-						'max_length' => 40
-					)
 				),
 				// region_name
 				'osfl_region_name' => array(
@@ -199,15 +190,12 @@ function _osfreelands_installed_fields($node_type) {
 				// parcel_key
 				'osfl_parcel_key' => array(
 					'field_name' => 'field_osfl_parcel_key',
-					'type' => 'text',
-					'module' => 'text',
+					'type' => 'uuid_field',
+					'module' => 'uuid_field',
 					'active' => 1,
 					'locked' => 1,
 					'cardinality' => 1,
 					'deleted' => 0,
-					'settings' => array(
-						'max_length' => 40
-					)
 				),
 				// terminal
 				'osfl_term_nid' => array(
@@ -256,15 +244,12 @@ function _osfreelands_installed_fields($node_type) {
 				// owner
 				'osfl_parcel_owner' => array(
 					'field_name' => 'field_osfl_parcel_owner',
-					'type' => 'text',
-					'module' => 'text',
+					'type' => 'uuid_field',
+					'module' => 'uuid_field',
 					'active' => 1,
 					'locked' => 1,
 					'cardinality' => 1,
 					'deleted' => 0,
-					'settings' => array(
-						'max_length' => 40
-					)
 				),
 				// parcel_location
 				'osfl_parcel_location' => array(
@@ -330,14 +315,7 @@ function _osfreelands_installed_instances($node_type) {
 				'osfl_term_key' => array(
 					'field_name' => 'field_osfl_term_key',
 					'label' => t('Terminal key'),
-					'required' => TRUE,
-					'widget' => array(
-						'type' => 'text_textfield',
-						'module' => 'text',
-						'settings' => array(
-							'size' => 40
-						)
-					)
+					'required' => TRUE
 				),
 				// terminal url
 				'osfl_term_url' => array(
@@ -361,27 +339,13 @@ function _osfreelands_installed_instances($node_type) {
 				'osfl_term_owner' => array(
 					'field_name' => 'field_osfl_term_owner',
 					'label' => t('Owner key'),
-					'required' => TRUE,
-					'widget' => array(
-						'type' => 'text_textfield',
-						'module' => 'text',
-						'settings' => array(
-							'size' => 40
-						)
-					)
+					'required' => TRUE
 				),
 				// default owner key
 				'osfl_term_default_owner' => array(
 					'field_name' => 'field_osfl_term_default_owner',
 					'label' => t('Default owner key'),
-					'required' => TRUE,
-					'widget' => array(
-						'type' => 'text_textfield',
-						'module' => 'text',
-						'settings' => array(
-							'size' => 40
-						)
-					)
+					'required' => TRUE
 				),
 				// region name
 				'osfl_region_name' => array(
@@ -415,14 +379,7 @@ function _osfreelands_installed_instances($node_type) {
 				'osfl_parcel_key' => array(
 					'field_name' => 'field_osfl_parcel_key',
 					'label' => t('Parcel key'),
-					'required' => TRUE,
-					'widget' => array(
-						'type' => 'text_textfield',
-						'module' => 'text',
-						'settings' => array(
-							'size' => 40
-						)
-					)
+					'required' => TRUE
 				),
 				// terminal nid
 				'osfl_term_nid' => array(
@@ -470,14 +427,7 @@ function _osfreelands_installed_instances($node_type) {
 				'osfl_parcel_owner' => array(
 					'field_name' => 'field_osfl_parcel_owner',
 					'label' => t('Owner key'),
-					'required' => TRUE,
-					'widget' => array(
-						'type' => 'text_textfield',
-						'module' => 'text',
-						'settings' => array(
-							'size' => 40
-						)
-					)
+					'required' => TRUE
 				),
 				// parcel location
 				'osfl_parcel_location' => array(

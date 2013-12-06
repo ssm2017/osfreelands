@@ -6,4 +6,6 @@ dependencies[] = entityreference
 dependencies[] = list
 dependencies[] = number
 dependencies[] = date
+dependencies[] = uuid_field
+dependencies[] = views
 core = 7.x

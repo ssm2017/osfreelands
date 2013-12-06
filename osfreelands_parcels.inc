@@ -30,7 +30,7 @@ function osfreelands_get_parcels_by_parcel_key($values) {
 	$query = new EntityFieldQuery();
 	$entities = $query->entityCondition('entity_type', 'node')
 			->propertyCondition('type', 'freelands_parcel')
-			->fieldCondition('field_osfl_parcel_key', 'value', $values['parcel_key'])
+			->fieldCondition('field_osfl_parcel_key', 'uuid_field', $values['parcel_key'])
 			->execute();
 	if (isset($entities['node'])) {
 		$nodes_ids = array();
@@ -47,7 +47,7 @@ function osfreelands_get_parcels_by_owner_key($values) {
 	$query = new EntityFieldQuery();
 	$entities = $query->entityCondition('entity_type', 'node')
 			->propertyCondition('type', 'freelands_parcel')
-			->fieldCondition('field_osfl_parcel_owner', 'value', $values['owner_key'])
+			->fieldCondition('field_osfl_parcel_owner', 'uuid_field', $values['owner_key'])
 			->execute();
 	if (isset($entities['node'])) {
 		$nodes_ids = array();
@@ -101,7 +101,7 @@ function osfreelands_save_parcel($values, $is_new = TRUE) {
 	$node->body[$node->language][0]['summary'] = text_summary(isset($values->desc) ? $values->desc : $node->body[$node->language][0]['summary']);
 	$node->body[$node->language][0]['format'] = 'plain_text';
 
-	$node->field_osfl_parcel_key[$node->language][0]['value'] = isset($values->uuid) ? $values->uuid : $node->field_osfl_parcel_key[$node->language][0]['value'];
+	$node->field_osfl_parcel_key[$node->language][0]['uuid_field'] = isset($values->uuid) ? $values->uuid : $node->field_osfl_parcel_key[$node->language][0]['uuid_field'];
 	$node->field_osfl_term_nid[$node->language][0]['target_id'] = isset($values->terminal_nid) ? $values->terminal_nid : $node->field_osfl_term_nid[$node->language][0]['target_id'];
 	$node->field_osfl_parcel_location[$node->language][0]['value'] = isset($values->parcel_location) ? $values->parcel_location : $node->field_osfl_parcel_location[$node->language][0]['value'];
 	$node->field_osfl_parcel_size[$node->language][0]['value'] = isset($values->area) ? $values->area : $node->field_osfl_parcel_size[$node->language][0]['value'];
@@ -130,7 +130,7 @@ function osfreelands_save_parcel($values, $is_new = TRUE) {
 
 	// defines the owner
 	if (isset($values->owner)) {
-		$node->field_osfl_parcel_owner[$node->language][0]['value'] = $values->owner;
+		$node->field_osfl_parcel_owner[$node->language][0]['uuid_field'] = $values->owner;
 	}
 
 	node_save($node);
@@ -214,7 +214,7 @@ function osfreelands_check_parcel_rentable_by_uid(&$parcel, $uid) {
 		}
 		else {
 			// check if the user already owns this parcel
-			$owner_key = $parcel->field_osfl_parcel_owner[$parcel->language][0]['value'];
+			$owner_key = $parcel->field_osfl_parcel_owner[$parcel->language][0]['uuid_field'];
 			if ($owner_key == $uuid) {
 				$answer->can_rent = TRUE;
 				$answer->status = 'status';
@@ -304,7 +304,9 @@ function osfreelands_batch_get_parcel_infos($settings, &$context) {
 		$parcels_nids = osfreelands_get_parcels_by_parcel_key(array('parcel_key' => $parcel_infos->uuid));
 		if (is_null($parcels_nids)) {
 			// create a new parcel
-			$parcel_infos->owner = $default_owner;
+			if($parcel_infos->owner != $default_owner) {
+				$parcel_infos->parcel_status = 2;
+			}
 			$saved_parcel = osfreelands_save_parcel($parcel_infos);
 			$result = t('Parcel named !name at !position created.', array('!name' => $parcel_infos->name, '!position' => $parcel_location));
 		}
