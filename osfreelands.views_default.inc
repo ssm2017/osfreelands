@@ -16,7 +16,8 @@
 function osfreelands_views_default_views() {
 	return array(
 		'freelands_terminals' => osfreelands_terminals_views(),
-		'freelands_parcels' => osfreelands_parcels_views()
+		'freelands_parcels' => osfreelands_parcels_views(),
+		'freelands_terminals_by_user' => osfreelands_terminal_by_user_views()
 	);
 }
 
@@ -327,5 +328,152 @@ function osfreelands_parcels_views() {
 	$handler->display->display_options['path'] = 'osfreelands/parcels';
 	$handler->display->display_options['menu']['type'] = 'normal';
 	$handler->display->display_options['menu']['title'] = 'Freelands Parcels';
+	return $view;
+}
+
+function osfreelands_terminal_by_user_views() {
+	$view = new view();
+	$view->name = 'freelands_terminals_by_user';
+	$view->description = '';
+	$view->tag = 'default';
+	$view->base_table = 'node';
+	$view->human_name = 'Freelands terminals by user';
+	$view->core = 7;
+	$view->api_version = '3.0';
+	$view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+
+	/* Display: Master */
+	$handler = $view->new_display('default', 'Master', 'default');
+	$handler->display->display_options['title'] = 'My freelands terminals';
+	$handler->display->display_options['use_more_always'] = FALSE;
+	$handler->display->display_options['access']['type'] = 'perm';
+	$handler->display->display_options['cache']['type'] = 'none';
+	$handler->display->display_options['query']['type'] = 'views_query';
+	$handler->display->display_options['exposed_form']['type'] = 'basic';
+	$handler->display->display_options['pager']['type'] = 'full';
+	$handler->display->display_options['pager']['options']['items_per_page'] = '10';
+	$handler->display->display_options['style_plugin'] = 'table';
+	$handler->display->display_options['style_options']['columns'] = array(
+		'field_osfl_region_name' => 'field_osfl_region_name',
+		'title' => 'title',
+		'field_osfl_last_online' => 'field_osfl_last_online',
+		'edit_node' => 'edit_node',
+		'delete_node' => 'delete_node',
+	);
+	$handler->display->display_options['style_options']['default'] = '-1';
+	$handler->display->display_options['style_options']['info'] = array(
+		'field_osfl_region_name' => array(
+			'sortable' => 0,
+			'default_sort_order' => 'asc',
+			'align' => '',
+			'separator' => '',
+			'empty_column' => 0,
+		),
+		'title' => array(
+			'sortable' => 0,
+			'default_sort_order' => 'asc',
+			'align' => '',
+			'separator' => '',
+			'empty_column' => 0,
+		),
+		'field_osfl_last_online' => array(
+			'sortable' => 0,
+			'default_sort_order' => 'asc',
+			'align' => '',
+			'separator' => '',
+			'empty_column' => 0,
+		),
+		'edit_node' => array(
+			'align' => '',
+			'separator' => '',
+			'empty_column' => 1,
+		),
+		'delete_node' => array(
+			'align' => '',
+			'separator' => '',
+			'empty_column' => 1,
+		),
+	);
+	/* No results behavior: Global: Text area */
+	$handler->display->display_options['empty']['area']['id'] = 'area';
+	$handler->display->display_options['empty']['area']['table'] = 'views';
+	$handler->display->display_options['empty']['area']['field'] = 'area';
+	$handler->display->display_options['empty']['area']['empty'] = TRUE;
+	$handler->display->display_options['empty']['area']['content'] = 'No terminal found';
+	$handler->display->display_options['empty']['area']['format'] = 'plain_text';
+	/* Field: Content: Region name */
+	$handler->display->display_options['fields']['field_osfl_region_name']['id'] = 'field_osfl_region_name';
+	$handler->display->display_options['fields']['field_osfl_region_name']['table'] = 'field_data_field_osfl_region_name';
+	$handler->display->display_options['fields']['field_osfl_region_name']['field'] = 'field_osfl_region_name';
+	$handler->display->display_options['fields']['field_osfl_region_name']['label'] = 'Region';
+	/* Field: Content: Title */
+	$handler->display->display_options['fields']['title']['id'] = 'title';
+	$handler->display->display_options['fields']['title']['table'] = 'node';
+	$handler->display->display_options['fields']['title']['field'] = 'title';
+	$handler->display->display_options['fields']['title']['alter']['word_boundary'] = FALSE;
+	$handler->display->display_options['fields']['title']['alter']['ellipsis'] = FALSE;
+	/* Field: Content: Last online */
+	$handler->display->display_options['fields']['field_osfl_last_online']['id'] = 'field_osfl_last_online';
+	$handler->display->display_options['fields']['field_osfl_last_online']['table'] = 'field_data_field_osfl_last_online';
+	$handler->display->display_options['fields']['field_osfl_last_online']['field'] = 'field_osfl_last_online';
+	$handler->display->display_options['fields']['field_osfl_last_online']['settings'] = array(
+		'format_type' => 'short',
+		'fromto' => 'both',
+		'multiple_number' => '',
+		'multiple_from' => '',
+		'multiple_to' => '',
+	);
+	/* Field: Content: Edit link */
+	$handler->display->display_options['fields']['edit_node']['id'] = 'edit_node';
+	$handler->display->display_options['fields']['edit_node']['table'] = 'views_entity_node';
+	$handler->display->display_options['fields']['edit_node']['field'] = 'edit_node';
+	$handler->display->display_options['fields']['edit_node']['label'] = '';
+	$handler->display->display_options['fields']['edit_node']['element_label_colon'] = FALSE;
+	$handler->display->display_options['fields']['edit_node']['hide_empty'] = TRUE;
+	/* Field: Content: Delete link */
+	$handler->display->display_options['fields']['delete_node']['id'] = 'delete_node';
+	$handler->display->display_options['fields']['delete_node']['table'] = 'views_entity_node';
+	$handler->display->display_options['fields']['delete_node']['field'] = 'delete_node';
+	$handler->display->display_options['fields']['delete_node']['label'] = '';
+	$handler->display->display_options['fields']['delete_node']['element_label_colon'] = FALSE;
+	$handler->display->display_options['fields']['delete_node']['hide_empty'] = TRUE;
+	/* Sort criterion: Content: Last online (field_osfl_last_online) */
+	$handler->display->display_options['sorts']['field_osfl_last_online_value']['id'] = 'field_osfl_last_online_value';
+	$handler->display->display_options['sorts']['field_osfl_last_online_value']['table'] = 'field_data_field_osfl_last_online';
+	$handler->display->display_options['sorts']['field_osfl_last_online_value']['field'] = 'field_osfl_last_online_value';
+	$handler->display->display_options['sorts']['field_osfl_last_online_value']['order'] = 'DESC';
+	/* Contextual filter: Content: Author uid */
+	$handler->display->display_options['arguments']['uid']['id'] = 'uid';
+	$handler->display->display_options['arguments']['uid']['table'] = 'node';
+	$handler->display->display_options['arguments']['uid']['field'] = 'uid';
+	$handler->display->display_options['arguments']['uid']['default_action'] = 'default';
+	$handler->display->display_options['arguments']['uid']['default_argument_type'] = 'user';
+	$handler->display->display_options['arguments']['uid']['default_argument_options']['user'] = FALSE;
+	$handler->display->display_options['arguments']['uid']['summary']['number_of_records'] = '0';
+	$handler->display->display_options['arguments']['uid']['summary']['format'] = 'default_summary';
+	$handler->display->display_options['arguments']['uid']['summary_options']['items_per_page'] = '25';
+	/* Filter criterion: Content: Published */
+	$handler->display->display_options['filters']['status']['id'] = 'status';
+	$handler->display->display_options['filters']['status']['table'] = 'node';
+	$handler->display->display_options['filters']['status']['field'] = 'status';
+	$handler->display->display_options['filters']['status']['value'] = 1;
+	$handler->display->display_options['filters']['status']['group'] = 1;
+	$handler->display->display_options['filters']['status']['expose']['operator'] = FALSE;
+	/* Filter criterion: Content: Type */
+	$handler->display->display_options['filters']['type']['id'] = 'type';
+	$handler->display->display_options['filters']['type']['table'] = 'node';
+	$handler->display->display_options['filters']['type']['field'] = 'type';
+	$handler->display->display_options['filters']['type']['value'] = array(
+		'freelands_terminal' => 'freelands_terminal',
+	);
+
+	/* Display: Page */
+	$handler = $view->new_display('page', 'Page', 'page');
+	$handler->display->display_options['path'] = 'user/%/osfreelands/terminals';
+	$handler->display->display_options['menu']['type'] = 'tab';
+	$handler->display->display_options['menu']['title'] = 'Freelands Terminals';
+	$handler->display->display_options['menu']['weight'] = '0';
+	$handler->display->display_options['menu']['context'] = 0;
+	$handler->display->display_options['menu']['context_only_inline'] = 0;
 	return $view;
 }
