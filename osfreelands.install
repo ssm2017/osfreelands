@@ -14,28 +14,28 @@
  * Implements hook_requirements().
  */
 function osfreelands_requirements($phase) {
-  $requirements = array();
-  $t = get_t();
-   if ($phase == 'install') {
-		 $valid = FALSE;
-		 // check if d4os_ui_users is installed
-		 if (module_exists('d4os_ui_users')) {
-			 $valid = TRUE;
-		 }
-		 // check if metaverse_user is installed
-		 if (module_exists('metaverse_user')) {
-			 $valid = TRUE;
-		 }
-    if (!$valid) {
-      $requirements['osfreelands'] = array(
-        'title' => $t('OsFreelands'),
-        'description' => $t('You need to enable either the d4os_ui_module or metaverse_user module to be able to enable the osfreelands module.'),
-        'severity' => REQUIREMENT_ERROR,
+	$requirements = array();
+	$t = get_t();
+	if ($phase == 'install') {
+		$valid = FALSE;
+		// check if d4os_ui_users is installed
+		if (module_exists('d4os_ui_users')) {
+			$valid = TRUE;
+		}
+		// check if metaverse_user is installed
+		if (module_exists('metaverse_user')) {
+			$valid = TRUE;
+		}
+		if (!$valid) {
+			$requirements['osfreelands'] = array(
+				'title' => $t('OsFreelands'),
+				'description' => $t('You need to enable either the d4os_ui_module or metaverse_user module to be able to enable the osfreelands module.'),
+				'severity' => REQUIREMENT_ERROR,
 				'weight' => -1000,
-      );
-    }
-  }
-  return $requirements;
+			);
+		}
+	}
+	return $requirements;
 }
 
 /**
@@ -185,27 +185,27 @@ function _osfreelands_installed_fields($node_type) {
 				),
 				// last_online
 				'osfl_last_online' => array(
-					'field_name'  => 'field_osfl_last_online',
-					'type'        => 'datestamp',
-					'module'      => 'date',
-					'active'      => 1,
-					'locked'      => 1,
+					'field_name' => 'field_osfl_last_online',
+					'type' => 'datestamp',
+					'module' => 'date',
+					'active' => 1,
+					'locked' => 1,
 					'cardinality' => 1,
-					'deleted'     => 0,
-					'settings'    => array(
-						'granularity'   => Array(
-							'month'   => 'month',
-							'day'     => 'day',
-							'hour'    => 'hour',
-							'minute'  => 'minute',
-							'year'    => 'year',
-							'second'  => 0,
+					'deleted' => 0,
+					'settings' => array(
+						'granularity' => Array(
+							'month' => 'month',
+							'day' => 'day',
+							'hour' => 'hour',
+							'minute' => 'minute',
+							'year' => 'year',
+							'second' => 0,
 						),
-						'tz_handling'   => 'site',
-						'timezone_db'   => 'UTC',
+						'tz_handling' => 'site',
+						'timezone_db' => 'UTC',
 						'cache_enabled' => 0,
-						'cache_count'   => 4,
-						'todate'        => '',
+						'cache_count' => 4,
+						'todate' => '',
 					),
 				),
 			);
@@ -301,27 +301,27 @@ function _osfreelands_installed_fields($node_type) {
 				),
 				// end_time
 				'osfl_end_time' => array(
-					'field_name'  => 'field_osfl_end_time',
-					'type'        => 'datestamp',
-					'module'      => 'date',
-					'active'      => 1,
-					'locked'      => 1,
+					'field_name' => 'field_osfl_end_time',
+					'type' => 'datestamp',
+					'module' => 'date',
+					'active' => 1,
+					'locked' => 1,
 					'cardinality' => 1,
-					'deleted'     => 0,
-					'settings'    => array(
-						'granularity'   => Array(
-							'month'   => 'month',
-							'day'     => 'day',
-							'hour'    => 'hour',
-							'minute'  => 'minute',
-							'year'    => 'year',
-							'second'  => 0,
+					'deleted' => 0,
+					'settings' => array(
+						'granularity' => Array(
+							'month' => 'month',
+							'day' => 'day',
+							'hour' => 'hour',
+							'minute' => 'minute',
+							'year' => 'year',
+							'second' => 0,
 						),
-						'tz_handling'   => 'site',
-						'timezone_db'   => 'UTC',
+						'tz_handling' => 'site',
+						'timezone_db' => 'UTC',
 						'cache_enabled' => 0,
-						'cache_count'   => 4,
-						'todate'        => '',
+						'cache_count' => 4,
+						'todate' => '',
 					),
 				),
 			);
@@ -353,23 +353,23 @@ function _osfreelands_installed_instances($node_type) {
 					),
 					'display' => array(
 						'default' => array(
-							'type'   => 'hidden'
+							'type' => 'hidden'
 						),
 						'teaser' => array(
-							'type'   => 'hidden'
+							'type' => 'hidden'
 						),
 					),
 				),
 				// owner key
 				'osfl_term_owner' => array(
 					'field_name' => 'field_osfl_term_owner',
-					'label' => t('Owner key'),
+					'label' => t('Owner'),
 					'required' => TRUE
 				),
 				// default owner key
 				'osfl_term_default_owner' => array(
 					'field_name' => 'field_osfl_term_default_owner',
-					'label' => t('Default owner key'),
+					'label' => t('Default owner'),
 					'required' => TRUE
 				),
 				// region name
@@ -398,27 +398,27 @@ function _osfreelands_installed_instances($node_type) {
 				),
 				// last_online
 				'osfl_last_online' => array(
-					'field_name'  => 'field_osfl_last_online',
-					'label'       => t('Last online'),
-					'required'    => FALSE,
+					'field_name' => 'field_osfl_last_online',
+					'label' => t('Last online'),
+					'required' => FALSE,
 					'widget' => array(
-						'type'     => 'date_select',
-						'module'   => 'date',
+						'type' => 'date_select',
+						'module' => 'date',
 						'settings' => array(
-							'input_format'  => 'm/d/Y - H:i:s',
-							'year_range'    => '0:+3',
-							'increment'     => 15,
+							'input_format' => 'm/d/Y - H:i:s',
+							'year_range' => '0:+3',
+							'increment' => 15,
 						),
 					),
 					'settings' => array(
-						'default_value'   => 'now',
-						'default_value2'  => 'same',
+						'default_value' => 'now',
+						'default_value2' => 'same',
 					),
 					'display' => array(
 						'default' => array(
-							'label'   => 'inline',
-							'type'    => 'date_default',
-							'module'  => 'date',
+							'label' => 'inline',
+							'type' => 'date_default',
+							'module' => 'date',
 						),
 					),
 				),
@@ -477,7 +477,7 @@ function _osfreelands_installed_instances($node_type) {
 				// owner key
 				'osfl_parcel_owner' => array(
 					'field_name' => 'field_osfl_parcel_owner',
-					'label' => t('Owner key'),
+					'label' => t('Owner'),
 					'required' => TRUE
 				),
 				// parcel location
@@ -510,32 +510,32 @@ function _osfreelands_installed_instances($node_type) {
 					'settings' => array(
 						'min' => 0,
 						'max' => 65536,
-						'suffix'=> 'm²'
+						'suffix' => 'm²'
 					)
 				),
 				// end_time
 				'osfl_end_time' => array(
-					'field_name'  => 'field_osfl_end_time',
-					'label'       => t('End time'),
-					'required'    => FALSE,
+					'field_name' => 'field_osfl_end_time',
+					'label' => t('End time'),
+					'required' => FALSE,
 					'widget' => array(
-						'type'     => 'date_select',
-						'module'   => 'date',
+						'type' => 'date_select',
+						'module' => 'date',
 						'settings' => array(
-							'input_format'  => 'm/d/Y - H:i:s',
-							'year_range'    => '0:+3',
-							'increment'     => 15,
+							'input_format' => 'm/d/Y - H:i:s',
+							'year_range' => '0:+3',
+							'increment' => 15,
 						),
 					),
 					'settings' => array(
-						'default_value'   => 'now',
-						'default_value2'  => 'same',
+						'default_value' => 'now',
+						'default_value2' => 'same',
 					),
 					'display' => array(
 						'default' => array(
-							'label'   => 'inline',
-							'type'    => 'date_default',
-							'module'  => 'date',
+							'label' => 'inline',
+							'type' => 'date_default',
+							'module' => 'date',
 						),
 					),
 				),
