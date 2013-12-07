@@ -144,7 +144,7 @@ function osfreelands_add_update_terminal_button(&$node) {
 	// ping terminal
 	$terminal = osfreelands_ping_terminal($node->nid);
 	// upate link
-	if (($GLOBALS['user']->uid == $node->uid) || $GLOBALS['user']->uid == 1 && $terminal->online_status == 'online') {
+	if ($terminal->online_status == 'online' && ($GLOBALS['user']->uid == $node->uid || user_access('osfl manage terminals'))) {
 		$node->content['osfreelands_updater'] = array(
 			'#type' => 'link',
 			'#title' => t('Update terminal'),

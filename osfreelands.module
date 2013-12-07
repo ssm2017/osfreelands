@@ -114,6 +114,18 @@ function osfreelands_settings() {
 }
 
 /**
+ * Implements hook_permission.
+ */
+function osfreelands_permission() {
+  return array(
+    'osfl manage terminals' => array(
+      'title' => t('Manage terminals'),
+      'description' => t('Allow the user to see and update any terminal.'),
+    ),
+  );
+}
+
+/**
  * Implements hook_views_api.
  */
 function osfreelands_views_api() {
