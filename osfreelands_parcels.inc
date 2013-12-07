@@ -239,8 +239,8 @@ function osfreelands_rent_parcel_callback($nid, $uid) {
 	// set values inworld
 	$values = array(
 		'terminal_url' => $terminal->field_osfl_term_url[$terminal->language][0]['value'],
-		'parcel_location' => $form_state['values']['field_osfl_parcel_location'][$node->language][0]['value'],
-		'owner_uuid' => osfreelands_get_uuid_by_uid($form_state['values']['field_osfl_parcel_owner'][$node->language][0]['target_id'])
+		'parcel_location' => $parcel->field_osfl_parcel_location[$parcel->language][0]['value'],
+		'owner_uuid' => osfreelands_get_uuid_by_uid($parcel->field_osfl_parcel_owner[$parcel->language][0]['target_uid'])
 	);
 	osfreelands_update_parcel_inworld($values);
 
