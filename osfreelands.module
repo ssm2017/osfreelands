@@ -127,6 +127,7 @@ function osfreelands_views_api() {
  */
 function osfreelands_cron() {
 	module_load_include('inc', 'osfreelands', 'osfreelands_terminals');
+	module_load_include('inc', 'osfreelands', 'osfreelands_parcels');
 	// get expired parcels
 	$query = new EntityFieldQuery();
 	$entities = $query->entityCondition('entity_type', 'node')
@@ -137,6 +138,7 @@ function osfreelands_cron() {
 		foreach ($nodes_ids as $nid) {
 			// get the parcel
 			$parcel = node_load($nid);
+			$old_owner = $parcel->field_osfl_parcel_owner[$parcel->language][0]['uuid_field'];
 			// get the terminal
 			$terminal = osfreelands_ping_terminal($parcel->field_osfl_term_nid[$parcel->language][0]['target_id']);
 			if ($terminal->online_status != 'online') {
@@ -154,6 +156,12 @@ function osfreelands_cron() {
 				$parcel->field_osfl_parcel_owner[$parcel->language][0]['uuid_field'] = $default_owner;
 				node_save($parcel);
 				watchdog('freelands', 'Parcel !name expired.', array('!name' => $parcel->title), WATCHDOG_NOTICE, $link = l($parcel->title, 'node/'.$parcel->nid));
+				// get parcels owned by this user
+				$owned_parcels = osfreelands_get_parcels_by_owner_key(array('owner_key' => $old_owner));
+				// remove the parcel role if no more parcels owned
+				if (is_null($owned_parcels)) {
+					db_query("DELETE FROM {users_roles} WHERE rid=:rid AND uid=:uid", array(':rid' => $rid, ':uid' => $uid));
+				}
 			}
 			else {
 				watchdog('freelands', 'Error changing parcel inworld details.', array(), WATCHDOG_ERROR, $link = l($parcel->title, 'node/'.$parcel->nid));
