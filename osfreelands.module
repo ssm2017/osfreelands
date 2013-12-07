@@ -187,7 +187,7 @@ function osfreelands_cron() {
  */
 function osfreelands_node_validate($node, $form, &$form_state) {
 	switch($node->type) {
-		case 'freeland_terminal':
+		case 'freelands_terminal':
 			// check if the owner is registered inworld
 			$owner_uuid = osfreelands_get_uuid_by_uid($form_state['values']['field_osfl_term_owner'][$node->language][0]['target_id']);
 			if (!$owner_uuid) {
@@ -199,7 +199,7 @@ function osfreelands_node_validate($node, $form, &$form_state) {
 				form_set_error('field_osfl_term_default_owner', t('The default owner is not registered inworld.'));
 			}
 			break;
-		case 'freeland_parcel':
+		case 'freelands_parcel':
 			// check if the owner is registered inworld
 			$owner_uuid = osfreelands_get_uuid_by_uid($form_state['values']['field_osfl_parcel_owner'][$node->language][0]['target_id']);
 			if (!$owner_uuid) {
