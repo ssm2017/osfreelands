@@ -16,12 +16,7 @@ function osfreelands_get_parcels_by_terminal_nid($values) {
 			->fieldCondition('field_osfl_term_nid', 'target_id', $values['terminal_nid'])
 			->execute();
 	if (isset($entities['node'])) {
-		$nodes_ids = array();
-		foreach ($entities['node'] as $n) {
-			$nodes_ids[] = $n->nid;
-		}
-		// get the nodes
-		return $nodes_ids;
+		return array_keys($entities['node']);
 	}
 	return NULL;
 }
@@ -33,12 +28,7 @@ function osfreelands_get_parcels_by_parcel_key($values) {
 			->fieldCondition('field_osfl_parcel_key', 'uuid_field', $values['parcel_key'])
 			->execute();
 	if (isset($entities['node'])) {
-		$nodes_ids = array();
-		foreach ($entities['node'] as $n) {
-			$nodes_ids[] = $n->nid;
-		}
-		// get the nodes
-		return $nodes_ids;
+		return array_keys($entities['node']);
 	}
 	return NULL;
 }
@@ -50,12 +40,7 @@ function osfreelands_get_parcels_by_owner_key($values) {
 			->fieldCondition('field_osfl_parcel_owner', 'uuid_field', $values['owner_key'])
 			->execute();
 	if (isset($entities['node'])) {
-		$nodes_ids = array();
-		foreach ($entities['node'] as $n) {
-			$nodes_ids[] = $n->nid;
-		}
-		// get the nodes
-		return $nodes_ids;
+		return array_keys($entities['node']);
 	}
 	return NULL;
 }
@@ -67,12 +52,7 @@ function osfreelands_get_parcels_by_parcel_nid($values) {
 			->propertyCondition('nid', $values['nid'])
 			->execute();
 	if (isset($entities['node'])) {
-		$nodes_ids = array();
-		foreach ($entities['node'] as $n) {
-			$nodes_ids[] = $n->nid;
-		}
-		// get the nodes
-		return $nodes_ids;
+		return array_keys($entities['node']);
 	}
 	return NULL;
 }
