@@ -157,6 +157,13 @@ function osfreelands_add_rent_parcel_button(&$node) {
 	}
 }
 
+function osfreelands_add_parcel_region_name(&$node) {
+	$terminal = node_load($node->field_osfl_term_nid[$node->language][0]['target_id']);
+	if (is_object($terminal)) {
+		$node->content['osfreelands_region_name'] = field_view_field('node', $terminal, 'field_osfl_region_name', $terminal->field_osfl_region_name[$terminal->language][0]);
+	}
+}
+
 function osfreelands_check_parcel_rentable_by_uid(&$parcel, $uid) {
 	$answer = new stdClass();
 	$answer->uid = $uid;

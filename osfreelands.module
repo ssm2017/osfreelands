@@ -183,6 +183,7 @@ function osfreelands_node_view($node, $build_mode = 'full') {
 			case 'freelands_parcel':
 				module_load_include('inc', 'osfreelands', 'osfreelands_parcels');
 				osfreelands_add_rent_parcel_button($node);
+				osfreelands_add_parcel_region_name($node);
 				break;
 		}
 	}
