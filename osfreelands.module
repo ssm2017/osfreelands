@@ -186,7 +186,6 @@ function osfreelands_cron() {
  * Implements hook_node_validate.
  */
 function osfreelands_node_validate($node, $form, &$form_state) {
-	dsm($form_state['values']);
 	switch($node->type) {
 		case 'freeland_terminal':
 			// check if the owner is registered inworld
