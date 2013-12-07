@@ -77,9 +77,6 @@ function osfreelands_save_terminal($values, $is_new = TRUE) {
 		$node->field_osfl_last_online[$node->language][0]['value'] = $values->last_online;
 	}
 
-	// assign role to owner
-	osfreelands_set_role($node->field_osfl_term_owner[$node->language][0]['target_id'], 'terminal');
-
 	node_save($node);
 	return $node;
 }
@@ -255,27 +252,40 @@ function osfreelands_ping_terminal($terminal_nid) {
 	$url = $terminal->field_osfl_term_url[$terminal->language][0]['value'];
 
 	// check if terminal is answering
+	$response = osfreelands_ping_terminal_by_url($url);
+	if ($response->online_status == 'online') {
+		$terminal->last_online = time();
+		node_save($terminal);
+	}
+	$terminal->online_status = $response->online_status;
+	drupal_set_message($response->message, $response->error_level);
+	return $terminal;
+}
+
+function osfreelands_ping_terminal_by_url($url) {
+	// check if terminal is answering
 	$response = metaverse_framework_http_request($url . 'ping');
 	if ($response->success && $response->code == 200) {
 		if ($response->data == 'pong') {
-			// save the last online value
-			$terminal->last_online = time();
-			node_save($terminal);
-			drupal_set_message(t('The terminal is answering.'));
-			$terminal->online_status = 'online';
+			$response->error_level = 'status';
+			$response->message = t('The terminal is answering.');
+			$response->online_status = 'online';
 		}
 		else if ($response->data == 'idle') {
-			drupal_set_message(t('Terminal is online but it is stopped (needs a reset)'), 'warning');
-			$terminal->online_status = 'idle';
+			$response->error_level = 'warning';
+			$response->message = t('Terminal is online but it is stopped (needs a reset)');
+			$response->online_status = 'idle';
 		}
 		else {
-			drupal_set_message(t('Terminal is online but there is an error : !error', array('!error' => $response->data)), 'error');
-			$terminal->online_status = 'error';
+			$response->error_level = 'error';
+			$response->message = t('Terminal is online but there is an error : !error', array('!error' => $response->data));
+			$response->online_status = 'error';
 		}
 	}
 	else {
-		drupal_set_message(t('The terminal is not answering : !error', array('!error' => $response->data . ' (' . $response->code . ')')), 'error');
-		$terminal->online_status = 'offline';
+		$response->error_level = 'error';
+		$response->message = t('The terminal is not answering : !error', array('!error' => $response->data . ' (' . $response->code . ')'));
+		$response->online_status = 'offline';
 	}
-	return $terminal;
+	return $response;
 }

@@ -117,9 +117,6 @@ function osfreelands_save_parcel($values, $is_new = TRUE) {
 		$node->field_osfl_parcel_owner[$node->language][0]['target_id'] = $values->parcel_owner_uid;
 	}
 
-	// assign role to owner
-	osfreelands_set_role($node->field_osfl_parcel_owner[$node->language][0]['target_id'], 'parcel');
-
 	node_save($node);
 	return $node;
 }
@@ -213,9 +210,9 @@ function osfreelands_rent_parcel_callback($nid, $uid) {
 	$success = FALSE;
 
 	// double check
-	$rentable = osfreelands_check_parcel_rentable_by_uid($parcel, $uid);
-	if (!$rentable->can_rent) {
-		drupal_set_message($rentable->message, $rentable->status);
+	$new_owner = osfreelands_check_parcel_rentable_by_uid($parcel, $uid);
+	if (!$new_owner->can_rent) {
+		drupal_set_message($new_owner->message, $new_owner->status);
 		drupal_goto('node/' . $nid);
 	}
 
@@ -226,37 +223,56 @@ function osfreelands_rent_parcel_callback($nid, $uid) {
 		drupal_goto('node/'.$nid);
 	}
 
+	// save the parcel
+	$parcel->parcel_owner_uid = $new_owner->uid;
+	$parcel->parcel_status = 2;
+	$renting_duration = variable_get('osfreelands_renting_duration', 0);
+	if ($renting_duration) {
+		$parcel->end_time = time() + (86400 * $renting_duration);
+	}
+	osfreelands_save_parcel($parcel, FALSE);
+
+	// assign role to owner
+	osfreelands_set_role($parcel->parcel_owner_uid, 'parcel');
+	// get the terminal
+	$terminal = node_load($parcel->field_osfl_term_nid[$parcel->language][0]['target_id']);
+	// set values inworld
+	$values = array(
+		'terminal_url' => $terminal->field_osfl_term_url[$terminal->language][0]['value'],
+		'parcel_location' => $form_state['values']['field_osfl_parcel_location'][$node->language][0]['value'],
+		'owner_uuid' => osfreelands_get_uuid_by_uid($form_state['values']['field_osfl_parcel_owner'][$node->language][0]['target_id'])
+	);
+	osfreelands_update_parcel_inworld($values);
+
+	drupal_goto('node/' . $nid);
+}
+
+function osfreelands_update_parcel_inworld($values) {
 	// generates the password
 	$key_given = rand(15000,50000);
 	$pass_given = md5(variable_get('osfreelands_password', '1234').':'.$key_given);
 
 	// send the info inworld
-	$url = $terminal->field_osfl_term_url[$terminal->language][0]['value']
-			. 'rent-parcel?' . $pass_given . '+'. $key_given . '+' . urlencode($parcel->field_osfl_parcel_location[$parcel->language][0]['value']) . '+' . $rentable->uuid;
+	$url = $values['terminal_url']
+			. 'rent-parcel?' . $pass_given . '+'. $key_given . '+' . urlencode($values['parcel_location']) . '+' . $values['owner_uuid'];
 	$response = metaverse_framework_http_request($url);
 	if ($response->success && $response->code == 200) {
 		// parse infos received
 		$parcel_infos = (object) drupal_json_decode(base64_decode($response->data));
-		if ($parcel_infos->parcel_owner == $rentable->uuid) {
+		if ($parcel_infos->parcel_owner == $values['owner_uuid']) {
 			// update the parcel
-			$parcel->parcel_owner_uid = $rentable->uid;
-			$parcel->parcel_status = 2;
-			$renting_duration = variable_get('osfreelands_renting_duration', 0);
-			if ($renting_duration) {
-				$parcel->end_time = time() + (86400 * $renting_duration);
-			}
-			$parcel = osfreelands_save_parcel($parcel, FALSE);
-			$success = TRUE;
+			$parcel_infos->saved_success = TRUE;
 			drupal_set_message(t('Parcel rented.'));
 		}
 		else {
+			$parcel_infos->saved_success = FALSE;
 			drupal_set_message(t('There was an error when saving parcel.'));
 		}
 	}
 	else {
 		drupal_set_message(t('Terminal error : !error', array('!error' => $response->code)), 'error');
+		$parcel_infos->saved_success = FALSE;
 	}
-	drupal_goto('node/' . $nid);
 }
 
 /* * ********************

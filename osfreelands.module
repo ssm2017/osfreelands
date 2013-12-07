@@ -186,8 +186,18 @@ function osfreelands_cron() {
  * Implements hook_node_validate.
  */
 function osfreelands_node_validate($node, $form, &$form_state) {
+	// check if the terminal is responding
+	if ($node->type == 'freelands_terminal' || $node->type == 'freelands_parcel') {
+		module_load_include('inc', 'osfreelands', 'osfreelands_terminals');
+	}
+	// check values
 	switch($node->type) {
 		case 'freelands_terminal':
+			// check if the terminal is responding
+			$response = osfreelands_ping_terminal_by_url($form_state['values']['field_osfl_term_url']);
+			if ($response->online_status != 'online') {
+				form_set_error('field_osfl_term_url', $response->message);
+			}
 			// check if the owner is registered inworld
 			$owner_uuid = osfreelands_get_uuid_by_uid($form_state['values']['field_osfl_term_owner'][$node->language][0]['target_id']);
 			if (!$owner_uuid) {
@@ -200,11 +210,44 @@ function osfreelands_node_validate($node, $form, &$form_state) {
 			}
 			break;
 		case 'freelands_parcel':
+			// get the terminal
+			$terminal = node_load($form_state['values']['field_osfl_term_nid'][$node->language][0]['target_id']);
+			// check if the terminal is responding
+			$response = osfreelands_ping_terminal_by_url($terminal->field_osfl_term_url[$terminal->language][0]['value']);
+			if ($response->online_status != 'online') {
+				form_set_error('field_osfl_term_nid', $response->message);
+			}
 			// check if the owner is registered inworld
 			$owner_uuid = osfreelands_get_uuid_by_uid($form_state['values']['field_osfl_parcel_owner'][$node->language][0]['target_id']);
 			if (!$owner_uuid) {
 				form_set_error('field_osfl_parcel_owner', t('The owner is not registered inworld.'));
 			}
+			break;
+	}
+}
+
+/**
+ * Implements hook_node_submit.
+ */
+function osfreelands_node_submit($node, $form, &$form_state) {
+	switch($node->type) {
+		case 'freelands_terminal':
+			// assign role to owner
+			osfreelands_set_role($form_state['values']['field_osfl_term_owner'][$node->language][0]['target_id'], 'terminal');
+			break;
+		case 'freelands_parcel':
+			// assign role to owner
+			osfreelands_set_role($form_state['values']['field_osfl_parcel_owner'][$node->language][0]['target_id'], 'parcel');
+			// get the terminal
+			$terminal = node_load($form_state['values']['field_osfl_term_nid'][$node->language][0]['target_id']);
+			// set values inworld
+			$values = array(
+				'terminal_url' => $terminal->field_osfl_term_url[$terminal->language][0]['value'],
+				'parcel_location' => $form_state['values']['field_osfl_parcel_location'][$node->language][0]['value'],
+				'owner_uuid' => osfreelands_get_uuid_by_uid($form_state['values']['field_osfl_parcel_owner'][$node->language][0]['target_id'])
+			);
+			module_load_include('inc', 'osfreelands', 'osfreelands_parcels');
+			osfreelands_update_parcel_inworld($values);
 			break;
 	}
 }
