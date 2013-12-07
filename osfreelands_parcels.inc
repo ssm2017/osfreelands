@@ -266,12 +266,12 @@ function osfreelands_update_parcel_inworld($values) {
 		}
 		else {
 			$parcel_infos->saved_success = FALSE;
-			drupal_set_message(t('There was an error when saving parcel.'));
+			drupal_set_message(t('There was an error when saving parcel.'), 'error');
 		}
 	}
 	else {
-		drupal_set_message(t('Terminal error : !error', array('!error' => $response->code)), 'error');
 		$parcel_infos->saved_success = FALSE;
+		drupal_set_message(t('Terminal error : !error', array('!error' => $response->code)), 'error');
 	}
 }
 
