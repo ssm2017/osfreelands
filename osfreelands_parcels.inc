@@ -34,10 +34,15 @@ function osfreelands_get_parcels_by_parcel_key($values) {
 }
 
 function osfreelands_get_parcels_by_owner_key($values) {
+	$uid = osfreelands_get_uid_by_uuid($values['owner_key']);
+	return osfreelands_get_parcels_by_owner_uid(array('owner_uid' => $uid));
+}
+
+function osfreelands_get_parcels_by_owner_uid($values) {
 	$query = new EntityFieldQuery();
 	$entities = $query->entityCondition('entity_type', 'node')
 			->propertyCondition('type', 'freelands_parcel')
-			->fieldCondition('field_osfl_parcel_owner', 'uuid_field', $values['owner_key'])
+			->fieldCondition('field_osfl_parcel_owner', 'target_id', $values['owner_uid'])
 			->execute();
 	if (isset($entities['node'])) {
 		return array_keys($entities['node']);
@@ -69,16 +74,15 @@ function osfreelands_save_parcel($values, $is_new = TRUE) {
 		$node = new stdClass();
 		$node->type = 'freelands_parcel';
 		node_object_prepare($node);
+		$node->language = LANGUAGE_NONE;
 	}
 	else {
 		$node = node_load($values->nid);
 	}
 
 	$node->title = isset($values->parcel_name) ? $values->parcel_name : $node->title;
-	$node->language = LANGUAGE_NONE;
 
 	$node->body[$node->language][0]['value'] = isset($values->parcel_desc) ? $values->parcel_desc : $node->body[$node->language][0]['value'];
-	$node->body[$node->language][0]['summary'] = text_summary(isset($values->parcel_desc) ? $values->parcel_desc : $node->body[$node->language][0]['summary']);
 	$node->body[$node->language][0]['format'] = 'plain_text';
 
 	$node->field_osfl_parcel_key[$node->language][0]['uuid_field'] = isset($values->parcel_uuid) ? $values->parcel_uuid : $node->field_osfl_parcel_key[$node->language][0]['uuid_field'];
@@ -109,16 +113,19 @@ function osfreelands_save_parcel($values, $is_new = TRUE) {
 	}
 
 	// defines the owner
-	if (isset($values->parcel_owner)) {
-		$node->field_osfl_parcel_owner[$node->language][0]['uuid_field'] = $values->parcel_owner;
+	if (isset($values->parcel_owner_uid)) {
+		$node->field_osfl_parcel_owner[$node->language][0]['target_id'] = $values->parcel_owner_uid;
 	}
+
+	// assign role to owner
+	osfreelands_set_role($node->field_osfl_parcel_owner[$node->language][0]['target_id'], 'parcel');
 
 	node_save($node);
 	return $node;
 }
 
-function osfreelands_add_rent_parcel_button(&$node) {
-	// check if rentable by the connected user
+function osfreelands_display_rent_parcel_button(&$node) {
+	// check if rentable by the actual user
 	$uid = $GLOBALS['user']->uid;
 	$rentable = osfreelands_check_parcel_rentable_by_uid($node, $uid);
 
@@ -139,7 +146,7 @@ function osfreelands_add_rent_parcel_button(&$node) {
 	}
 }
 
-function osfreelands_add_parcel_region_name(&$node) {
+function osfreelands_display_parcel_region_name(&$node) {
 	$terminal = node_load($node->field_osfl_term_nid[$node->language][0]['target_id']);
 	if (is_object($terminal)) {
 		$node->content['osfreelands_region_name'] = field_view_field('node', $terminal, 'field_osfl_region_name', $terminal->field_osfl_region_name[$terminal->language][0]);
@@ -166,7 +173,7 @@ function osfreelands_check_parcel_rentable_by_uid(&$parcel, $uid) {
 		// check if the parcel is available
 		if ($parcel->field_osfl_parcel_status[$parcel->language][0]['value'] == 0) {
 			// check if the user already owns another parcel
-			$user_parcels = osfreelands_get_parcels_by_owner_key(array('owner_key' => $uuid));
+			$user_parcels = osfreelands_get_parcels_by_owner_uid(array('owner_uid' => $uid));
 			$user_parcels_qty = count($user_parcels);
 			if (!is_null($user_parcels)) {
 				// check if the user can rent another parcel
@@ -191,8 +198,7 @@ function osfreelands_check_parcel_rentable_by_uid(&$parcel, $uid) {
 		}
 		else {
 			// check if the user already owns this parcel
-			$owner_key = $parcel->field_osfl_parcel_owner[$parcel->language][0]['uuid_field'];
-			if ($owner_key == $uuid) {
+			if ($parcel->field_osfl_parcel_owner[$parcel->language][0]['target_uid'] == $uuid) {
 				$answer->can_rent = TRUE;
 				$answer->status = 'status';
 				$answer->message = t('You can renew your rent.');
@@ -233,7 +239,7 @@ function osfreelands_rent_parcel_callback($nid, $uid) {
 		$parcel_infos = (object) drupal_json_decode(base64_decode($response->data));
 		if ($parcel_infos->parcel_owner == $rentable->uuid) {
 			// update the parcel
-			$parcel->parcel_owner = $rentable->uuid;
+			$parcel->parcel_owner_uid = $rentable->uid;
 			$parcel->parcel_status = 2;
 			$renting_duration = variable_get('osfreelands_renting_duration', 0);
 			if ($renting_duration) {
@@ -250,10 +256,6 @@ function osfreelands_rent_parcel_callback($nid, $uid) {
 	else {
 		drupal_set_message(t('Terminal error : !error', array('!error' => $response->code)), 'error');
 	}
-	// assign role
-	if (is_object($parcel) && $success) {
-		osfreelands_set_role($uid, 'parcel');
-	}
 	drupal_goto('node/' . $nid);
 }
 
@@ -262,26 +264,39 @@ function osfreelands_rent_parcel_callback($nid, $uid) {
  * ******************** */
 
 function osfreelands_batch_get_parcel_infos($settings, &$context) {
+	// init some vars
 	$parcel_location = $settings['parcel_location'];
 	$terminal_url = $settings['terminal_url'];
 	$terminal_nid = $settings['terminal_nid'];
-	$default_owner = $settings['default_owner'];
-	// init some vars
+	$default_owner_uid = $settings['default_owner_uid'];
+	$default_owner_uuid = osfreelands_get_uuid_by_uid($default_owner_uid);
 	$result = "not ok";
 	$url = $terminal_url . 'get-parcel-infos?' . urlencode($parcel_location);
+
 	// get the infos inworld
 	$response = metaverse_framework_http_request($url);
 	if ($response->success && $response->code == 200) {
+
 		// parse infos received
 		$parcel_infos = (object) drupal_json_decode(base64_decode($response->data));
 		$parcel_infos->terminal_nid = $terminal_nid;
 		$parcel_infos->parcel_location = $parcel_location;
+
 		// get parcel by uuid
-		$duration = variable_get('osfreelands_renting_duration', 0);
 		$parcels_nids = osfreelands_get_parcels_by_parcel_key(array('parcel_key' => $parcel_infos->parcel_uuid));
+
+		// check the owner uid
+		$parcel_infos->parcel_owner_uid = osfreelands_get_uid_by_uuid($parcel_infos->parcel_owner);
+		if (!$parcel_infos->parcel_owner_uid) {
+			$context['results'][] = t('The parcel owner of parcel !name at !position, is not registered on the website. The owner is set to default owner.'
+					, array('!name' => $parcel_infos->parcel_name, '!position' => $parcel_location));
+			$parcel_infos->parcel_owner_uid = $default_owner_uid;
+		}
+
+		// save the parcel
 		if (is_null($parcels_nids)) {
 			// create a new parcel
-			if($parcel_infos->parcel_owner != $default_owner) {
+			if($parcel_infos->parcel_owner != $default_owner_uuid) {
 				$parcel_infos->parcel_status = 2;
 			}
 			$saved_parcel = osfreelands_save_parcel($parcel_infos);
@@ -290,7 +305,6 @@ function osfreelands_batch_get_parcel_infos($settings, &$context) {
 		else {
 			// update parcel
 			$parcel_infos->nid = $parcels_nids[0];
-			unset($parcel_infos->parcel_owner);
 			$saved_parcel = osfreelands_save_parcel($parcel_infos, FALSE);
 			$result = t('Parcel at !position updated.', array('!position' => $parcel_location));
 		}

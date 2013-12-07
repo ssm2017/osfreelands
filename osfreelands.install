@@ -140,22 +140,30 @@ function _osfreelands_installed_fields($node_type) {
 				// owner
 				'osfl_term_owner' => array(
 					'field_name' => 'field_osfl_term_owner',
-					'type' => 'uuid_field',
-					'module' => 'uuid_field',
+					'type' => 'entityreference',
+					'module' => 'entityreference',
 					'active' => 1,
 					'locked' => 1,
 					'cardinality' => 1,
 					'deleted' => 0,
+					'settings' => array(
+						'target_type' => 'user',
+						'handler' => 'base',
+					),
 				),
 				// default owner
 				'osfl_term_default_owner' => array(
 					'field_name' => 'field_osfl_term_default_owner',
-					'type' => 'uuid_field',
-					'module' => 'uuid_field',
+					'type' => 'entityreference',
+					'module' => 'entityreference',
 					'active' => 1,
 					'locked' => 1,
 					'cardinality' => 1,
 					'deleted' => 0,
+					'settings' => array(
+						'target_type' => 'user',
+						'handler' => 'base',
+					),
 				),
 				// region_name
 				'osfl_region_name' => array(
@@ -237,14 +245,6 @@ function _osfreelands_installed_fields($node_type) {
 						'handler_settings' => array(
 							'target_bundles' => array(
 								'freelands_terminal' => 'freelands_terminal'
-							),
-							'sort' => array(
-								'type' => 'none'
-							),
-							'behaviors' => array(
-								'views-select-list' => array(
-									'status' => 0
-								)
 							)
 						)
 					),
@@ -269,12 +269,16 @@ function _osfreelands_installed_fields($node_type) {
 				// owner
 				'osfl_parcel_owner' => array(
 					'field_name' => 'field_osfl_parcel_owner',
-					'type' => 'uuid_field',
-					'module' => 'uuid_field',
+					'type' => 'entityreference',
+					'module' => 'entityreference',
 					'active' => 1,
 					'locked' => 1,
 					'cardinality' => 1,
 					'deleted' => 0,
+					'settings' => array(
+						'target_type' => 'user',
+						'handler' => 'base',
+					),
 				),
 				// parcel_location
 				'osfl_parcel_location' => array(
@@ -360,17 +364,55 @@ function _osfreelands_installed_instances($node_type) {
 						),
 					),
 				),
-				// owner key
+				// owner uid
 				'osfl_term_owner' => array(
 					'field_name' => 'field_osfl_term_owner',
 					'label' => t('Owner'),
-					'required' => TRUE
+					'required' => 1,
+					'widget' => array(
+						'type' => 'entityreference_autocomplete',
+						'module' => 'entityreference',
+						'settings' => array(
+							'match_operator' => 'CONTAINS',
+							'size' => 60,
+							'path' => ''
+						)
+					),
+					'display' => array(
+						'default' => array(
+							'label' => 'inline',
+							'type' => 'entityreference_label',
+							'module' => 'entityreference',
+							'settings' => array(
+								'link' => TRUE
+							)
+						)
+					)
 				),
-				// default owner key
+				// default owner uid
 				'osfl_term_default_owner' => array(
 					'field_name' => 'field_osfl_term_default_owner',
 					'label' => t('Default owner'),
-					'required' => TRUE
+					'required' => 1,
+					'widget' => array(
+						'type' => 'entityreference_autocomplete',
+						'module' => 'entityreference',
+						'settings' => array(
+							'match_operator' => 'CONTAINS',
+							'size' => 60,
+							'path' => ''
+						)
+					),
+					'display' => array(
+						'default' => array(
+							'label' => 'inline',
+							'type' => 'entityreference_label',
+							'module' => 'entityreference',
+							'settings' => array(
+								'link' => TRUE
+							)
+						)
+					)
 				),
 				// region name
 				'osfl_region_name' => array(
@@ -474,11 +516,30 @@ function _osfreelands_installed_instances($node_type) {
 						),
 					),
 				),
-				// owner key
+				// owner uid
 				'osfl_parcel_owner' => array(
 					'field_name' => 'field_osfl_parcel_owner',
 					'label' => t('Owner'),
-					'required' => TRUE
+					'required' => 1,
+					'widget' => array(
+						'type' => 'entityreference_autocomplete',
+						'module' => 'entityreference',
+						'settings' => array(
+							'match_operator' => 'CONTAINS',
+							'size' => 60,
+							'path' => ''
+						)
+					),
+					'display' => array(
+						'default' => array(
+							'label' => 'inline',
+							'type' => 'entityreference_label',
+							'module' => 'entityreference',
+							'settings' => array(
+								'link' => TRUE
+							)
+						)
+					)
 				),
 				// parcel location
 				'osfl_parcel_location' => array(

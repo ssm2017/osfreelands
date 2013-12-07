@@ -26,7 +26,7 @@ function osfreelands_get_terminals_by_region($values) {
 	$query = new EntityFieldQuery();
 	$entities = $query->entityCondition('entity_type', 'node')
 			->propertyCondition('type', 'freelands_terminal')
-			->fieldCondition('field_osfl_term_owner', 'uuid_field', $values['owner_key'])
+			->fieldCondition('field_osfl_term_owner', 'target_id', $values['owner_uid'])
 			->fieldCondition('field_osfl_region_name', 'value', $values['region_name'])
 			->execute();
 	if (isset($entities['node'])) {
@@ -35,43 +35,50 @@ function osfreelands_get_terminals_by_region($values) {
 	return NULL;
 }
 
-function osfreelands_save_terminal($values, $args = array(), $is_new = TRUE) {
+function osfreelands_get_terminals_by_owner_uid($values) {
+	$query = new EntityFieldQuery();
+	$entities = $query->entityCondition('entity_type', 'node')
+			->propertyCondition('type', 'freelands_terminal')
+			->fieldCondition('field_osfl_term_owner', 'target_id', $values['owner_uid'])
+			->execute();
+	if (isset($entities['node'])) {
+		return array_keys($entities['node']);
+	}
+	return NULL;
+}
+
+function osfreelands_save_terminal($values, $is_new = TRUE) {
 	if ($is_new) {
 		$node = new stdClass();
 		$node->type = 'freelands_terminal';
 		node_object_prepare($node);
+		$node->language = LANGUAGE_NONE;
 	}
 	else {
 		$node = node_load($values->nid);
 	}
 
-	// get the owner uid if possible
-	$node->uid = 1;
-
-	$uid = osfreelands_get_uid_by_uuid($values->ownerkey);
-	if ($uid) {
-		$node->uid = $uid;
-	}
-
 	// fill other values
+	$node->uid = $values->owner_uid;
 	$node->title = $values->objectname;
-	$node->language = LANGUAGE_NONE;
 
 	$node->body[$node->language][0]['value'] = '';
-	$node->body[$node->language][0]['summary'] = text_summary('');
 	$node->body[$node->language][0]['format'] = 'plain_text';
 
 	$node->field_osfl_term_key[$node->language][0]['uuid_field'] = $values->objectkey;
-	if (isset($args['terminal_url'])) {
-		$node->field_osfl_term_url[$node->language][0]['value'] = base64_decode($args['terminal_url']);
+	if (isset($values->terminal_url)) {
+		$node->field_osfl_term_url[$node->language][0]['value'] = base64_decode($values->terminal_url);
 	}
-	$node->field_osfl_term_owner[$node->language][0]['uuid_field'] = $values->ownerkey;
-	$node->field_osfl_term_default_owner[$node->language][0]['uuid_field'] = $args['default_owner'];
+	$node->field_osfl_term_owner[$node->language][0]['target_id'] = $values->owner_uid;
+	$node->field_osfl_term_default_owner[$node->language][0]['target_id'] = $values->default_owner_uid;
 	$node->field_osfl_region_name[$node->language][0]['value'] = $values->region_name;
 	$node->field_osfl_term_location[$node->language][0]['value'] = '<'.floor($values->position_x).','.floor($values->position_y).','.floor($values->position_z).'>';
 	if (isset($values->last_online)) {
 		$node->field_osfl_last_online[$node->language][0]['value'] = $values->last_online;
 	}
+
+	// assign role to owner
+	osfreelands_set_role($node->field_osfl_term_owner[$node->language][0]['target_id'], 'terminal');
 
 	node_save($node);
 	return $node;
@@ -106,7 +113,7 @@ function osfreelands_update_terminal($nid) {
 				'parcel_location' => $parcel,
 				'terminal_url' => $url,
 				'terminal_nid' => $nid,
-				'default_owner' => $terminal->field_osfl_term_default_owner[$terminal->language][0]['uuid_field']
+				'default_owner_uid' => $terminal->field_osfl_term_default_owner[$terminal->language][0]['target_id']
 			);
 			$operations[] = array('osfreelands_batch_get_parcel_infos', array($settings));
 		}
@@ -140,7 +147,7 @@ function osfreelands_delete_terminals($terminals_nids) {
 	node_delete_multiple($terminals_nids);
 }
 
-function osfreelands_add_update_terminal_button(&$node) {
+function osfreelands_display_update_terminal_button(&$node) {
 	// ping terminal
 	$terminal = osfreelands_ping_terminal($node->nid);
 	// upate link
@@ -173,13 +180,35 @@ function osfreelands_inworld_save_terminal (&$sl, $args) {
 		$sl->response['message'] = "error;". metaverse_framework_get_messages();
 		return;
 	}
+
+	// check if the owner is registered on the website
+	$sl->owner_uid = osfreelands_get_uid_by_uuid($sl->ownerkey);
+	if (!$sl->owner_uid) {
+		drupal_set_message(t('Owner not registered on the website.'));
+		$sl->response['status'] = FALSE;
+		$sl->response['message'] = "error;". metaverse_framework_get_messages();
+		return;
+	}
+
+	// check if the default owner is registered on the website
+	$sl->default_owner_uid = osfreelands_get_uid_by_uuid($args['default_owner']);
+	if (!$sl->default_owner_uid) {
+		drupal_set_message(t('Default owner not registered on the website.'));
+		$sl->response['status'] = FALSE;
+		$sl->response['message'] = "error;". metaverse_framework_get_messages();
+		return;
+	}
+
+	// fill some default values
+	$sl->terminal_url = $args['terminal_url'];
+	$sl->last_online = time();
+
 	// check if the terminal exists
 	$terminals = osfreelands_get_terminals_by_key(array('terminal_key' => $sl->objectkey));
-
 	if (is_null($terminals)) {
 		drupal_set_message(t('no terminals found by id'));
 		// check if there is already a terminal on this region
-		$terminals = osfreelands_get_terminals_by_region(array('owner_key' => $sl->ownerkey, 'region_name' => $sl->region_name));
+		$terminals = osfreelands_get_terminals_by_region(array('owner_uid' => $sl->owner_uid, 'region_name' => $sl->region_name));
 		if (!is_null($terminals)) {
 			drupal_set_message(t('!qty terminals found by region', array('!qty' => count($terminals))));
 			// delete terminals
@@ -198,20 +227,16 @@ function osfreelands_inworld_save_terminal (&$sl, $args) {
 		else {
 			// update terminal
 			$sl->nid = $terminals[0];
-			$sl->last_online = time();
-			$terminal = osfreelands_save_terminal($sl, $args, FALSE);
+			$terminal = osfreelands_save_terminal($sl, FALSE);
 			drupal_set_message(t('terminal updated'));
 		}
 	}
 	if (is_null($terminals)) {
 		// create a new terminal
-		$sl->last_online = time();
-		$terminal = osfreelands_save_terminal($sl, $args);
+		$terminal = osfreelands_save_terminal($sl);
 		drupal_set_message(t('terminal created'));
 	}
 	if (is_object($terminal)) {
-		// assign role to terminal owner
-		osfreelands_set_role($terminal->uid, 'terminal');
 		// send the answer
 		$sl->response['status'] = TRUE;
 		$sl->response['message'] = "success;". metaverse_framework_get_messages();

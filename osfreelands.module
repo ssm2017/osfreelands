@@ -150,14 +150,14 @@ function osfreelands_cron() {
 		foreach ($nodes_ids as $nid) {
 			// get the parcel
 			$parcel = node_load($nid);
-			$old_owner = $parcel->field_osfl_parcel_owner[$parcel->language][0]['uuid_field'];
+			$old_owner_uid = $parcel->field_osfl_parcel_owner[$parcel->language][0]['target_id'];
 			// get the terminal
 			$terminal = osfreelands_ping_terminal($parcel->field_osfl_term_nid[$parcel->language][0]['target_id']);
 			if ($terminal->online_status != 'online') {
 				watchdog('freelands', 'Terminal !name is not responding.', array('!name' => $terminal->title), WATCHDOG_ERROR, $link = l($terminal->title, 'node/'.$terminal->nid));
 				continue;
 			}
-			$default_owner = $terminal->field_osfl_term_default_owner[$terminal->language][0]['uuid_field'];
+			$default_owner_uid = $terminal->field_osfl_term_default_owner[$terminal->language][0]['target_id'];
 			// get the url
 			$url = $terminal->field_osfl_term_url[$terminal->language][0]['value'];
 			// tell it inworld
@@ -165,20 +165,48 @@ function osfreelands_cron() {
 			if ($response->success && $response->code == 200) {
 				$parcel->field_osfl_parcel_status[$parcel->language][0]['value'] = 0;
 				$parcel->field_osfl_end_time[$parcel->language][0]['value'] = NULL;
-				$parcel->field_osfl_parcel_owner[$parcel->language][0]['uuid_field'] = $default_owner;
+				$parcel->field_osfl_parcel_owner[$parcel->language][0]['target_uid'] = $default_owner_uid;
 				node_save($parcel);
 				watchdog('freelands', 'Parcel !name expired.', array('!name' => $parcel->title), WATCHDOG_NOTICE, $link = l($parcel->title, 'node/'.$parcel->nid));
 				// get parcels owned by this user
 				$owned_parcels = osfreelands_get_parcels_by_owner_key(array('owner_key' => $old_owner));
 				// remove the parcel role if no more parcels owned
 				if (is_null($owned_parcels)) {
-					db_query("DELETE FROM {users_roles} WHERE rid=:rid AND uid=:uid", array(':rid' => $rid, ':uid' => $uid));
+					osfreelands_remove_role($old_owner_uid, 'parcel');
 				}
 			}
 			else {
 				watchdog('freelands', 'Error changing parcel inworld details.', array(), WATCHDOG_ERROR, $link = l($parcel->title, 'node/'.$parcel->nid));
 			}
 		}
+	}
+}
+
+/**
+ * Implements hook_node_validate.
+ */
+function osfreelands_node_validate($node, $form, &$form_state) {
+	dsm($form_state['values']);
+	switch($node->type) {
+		case 'freeland_terminal':
+			// check if the owner is registered inworld
+			$owner_uuid = osfreelands_get_uuid_by_uid($form_state['values']['field_osfl_term_owner'][$node->language][0]['target_id']);
+			if (!$owner_uuid) {
+				form_set_error('field_osfl_term_owner', t('The owner is not registered inworld.'));
+			}
+			// check if the default owner is registered inworld
+			$default_owner_uuid = osfreelands_get_uuid_by_uid($form_state['values']['field_osfl_term_default_owner'][$node->language][0]['target_id']);
+			if (!$default_owner_uuid) {
+				form_set_error('field_osfl_term_default_owner', t('The default owner is not registered inworld.'));
+			}
+			break;
+		case 'freeland_parcel':
+			// check if the owner is registered inworld
+			$owner_uuid = osfreelands_get_uuid_by_uid($form_state['values']['field_osfl_parcel_owner'][$node->language][0]['target_id']);
+			if (!$owner_uuid) {
+				form_set_error('field_osfl_parcel_owner', t('The owner is not registered inworld.'));
+			}
+			break;
 	}
 }
 
@@ -190,12 +218,12 @@ function osfreelands_node_view($node, $build_mode = 'full') {
 		switch ($node->type) {
 			case 'freelands_terminal':
 				module_load_include('inc', 'osfreelands', 'osfreelands_terminals');
-				osfreelands_add_update_terminal_button($node);
+				osfreelands_display_update_terminal_button($node);
 				break;
 			case 'freelands_parcel':
 				module_load_include('inc', 'osfreelands', 'osfreelands_parcels');
-				osfreelands_add_rent_parcel_button($node);
-				osfreelands_add_parcel_region_name($node);
+				osfreelands_display_rent_parcel_button($node);
+				osfreelands_display_parcel_region_name($node);
 				break;
 		}
 	}
@@ -205,13 +233,31 @@ function osfreelands_node_view($node, $build_mode = 'full') {
  * Implements hook_node_delete.
  */
 function osfreelands_node_delete($node) {
-	if ($node->type == 'freelands_terminal') {
-		// delete parcels
-		module_load_include('inc', 'osfreelands', 'osfreelands_parcels');
-		$parcels_nids = osfreelands_get_parcels_by_terminal_nid(array('terminal_nid' => $node->nid));
-		if (!is_null($parcels_nids)) {
-			node_delete_multiple($parcels_nids);
-		}
+	switch ($node->type) {
+		case 'freelands_terminal':
+			module_load_include('inc', 'osfreelands', 'osfreelands_terminals');
+			module_load_include('inc', 'osfreelands', 'osfreelands_parcels');
+			// delete parcels
+			$parcels_nids = osfreelands_get_parcels_by_terminal_nid(array('terminal_nid' => $node->nid));
+			if (!is_null($parcels_nids)) {
+				node_delete_multiple($parcels_nids);
+			}
+			// check if the owner owns other terminals
+			$owner_uid = $node->field_osfl_term_owner[$node->language][0]['target_id'];
+			$terminals = osfreelands_get_terminals_by_owner_uid(array('owner_uid' => $owner_uid));
+			if (is_null($terminals)) {
+				osfreelands_remove_role($owner_uid, 'terminal');
+			}
+			break;
+		case 'freelands_parcel':
+			module_load_include('inc', 'osfreelands', 'osfreelands_parcels');
+			// check if the owner owns other parcels
+			$owner_uid = $node->field_osfl_parcel_owner[$node->language][0]['target_id'];
+			$parcels = osfreelands_get_parcels_by_owner_uid(array('owner_uid' => $owner_uid));
+			if (is_null($parcels)) {
+				osfreelands_remove_role($owner_uid, 'parcel');
+			}
+			break;
 	}
 }
 
@@ -234,12 +280,12 @@ function osfreelands_dispatch($params) {
 	}
 }
 
-function osfreelands_set_role($uid, $role) {
+function osfreelands_set_role($uid, $type) {
   if (!is_numeric($uid)) {
 		return;
 	}
 
-	switch ($role) {
+	switch ($type) {
 		case 'terminal':
 			$rid = variable_get('osfreelands_terminal_role', 0);
 			break;
@@ -259,6 +305,30 @@ function osfreelands_set_role($uid, $role) {
 
   // assign the role
   db_query("INSERT INTO {users_roles} (rid, uid) VALUES (:rid, :uid)", array(':rid' => $rid, ':uid' => $uid));
+}
+
+function osfreelands_remove_role($uid, $type) {
+	if (!is_numeric($uid)) {
+		return;
+	}
+
+	switch ($type) {
+		case 'terminal':
+			$rid = variable_get('osfreelands_terminal_role', 0);
+			break;
+		case 'parcel':
+			$rid = variable_get('osfreelands_parcel_role', 0);
+			break;
+		default:
+			return;
+	}
+
+  if ($rid == 0) {
+		return;
+	}
+
+	// remove assigned roles
+  db_query("DELETE FROM {users_roles} WHERE rid=:rid AND uid=:uid", array(':rid' => $rid, ':uid' => $uid));
 }
 
 function osfreelands_get_uuid_by_uid($uid) {
