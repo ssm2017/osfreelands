@@ -125,7 +125,8 @@ function osfreelands_add_rent_parcel_button(&$node) {
 	// display the result
 	if (isset($rentable->status)) {
 		$node->content['osfreelands_status'] = array(
-			'#markup' => '<div class="messages ' . $rentable->status . '">' . $rentable->message . '</div>'
+			'#markup' => '<div class="messages ' . $rentable->status . '">' . $rentable->message . '</div>',
+			'#weight' => -2
 		);
 	}
 	if ($rentable->can_rent) {
@@ -133,6 +134,7 @@ function osfreelands_add_rent_parcel_button(&$node) {
 			'#type' => 'link',
 			'#title' => t('Click here to rent this parcel'),
 			'#href' => 'osfreelands/parcels/rent/' . $node->nid . '/' . $uid,
+			'#weight' => -1
 		);
 	}
 }
