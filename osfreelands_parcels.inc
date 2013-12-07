@@ -195,7 +195,7 @@ function osfreelands_check_parcel_rentable_by_uid(&$parcel, $uid) {
 		}
 		else {
 			// check if the user already owns this parcel
-			if ($parcel->field_osfl_parcel_owner[$parcel->language][0]['target_uid'] == $uuid) {
+			if ($parcel->field_osfl_parcel_owner[$parcel->language][0]['target_id'] == $uid) {
 				$answer->can_rent = TRUE;
 				$answer->status = 'status';
 				$answer->message = t('You can renew your rent.');
