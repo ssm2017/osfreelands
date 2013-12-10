@@ -133,6 +133,7 @@ function osfreelands_update_terminal($nid) {
 }
 
 function osfreelands_delete_terminals($terminals_nids) {
+  module_load_include('inc', 'osfreelands', 'osfreelands_parcels');
 	foreach ($terminals_nids as $terminal_nid) {
 		// delete parcels
 		$parcels_nids = osfreelands_get_parcels_by_terminal_nid(array('terminal_nid' => $terminal_nid));
