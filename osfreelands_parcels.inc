@@ -261,16 +261,13 @@ function osfreelands_update_parcel_inworld($values) {
 		$parcel_infos = (object) drupal_json_decode(base64_decode($response->data));
 		if ($parcel_infos->parcel_owner == $values['owner_uuid']) {
 			// update the parcel
-			$parcel_infos->saved_success = TRUE;
 			drupal_set_message(t('Parcel rented.'));
 		}
 		else {
-			$parcel_infos->saved_success = FALSE;
 			drupal_set_message(t('There was an error when saving parcel.'), 'error');
 		}
 	}
 	else {
-		$parcel_infos->saved_success = FALSE;
 		drupal_set_message(t('Terminal error : !error', array('!error' => $response->code)), 'error');
 	}
 }
