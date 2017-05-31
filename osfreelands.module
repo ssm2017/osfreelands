@@ -23,7 +23,7 @@ function osfreelands_menu() {
 		'access arguments' => array('administer site configuration'),
 		'type' => MENU_NORMAL_ITEM,
 	);
-	$items['osfreelands/terminals/update/%'] = array(
+	$items['freelands/terminals/update/%'] = array(
 		'title' => 'Update terminal',
 		'type' => MENU_CALLBACK,
 		'page callback' => 'osfreelands_update_terminal',
@@ -31,7 +31,7 @@ function osfreelands_menu() {
 		'access callback' => TRUE,
 		'file' => 'osfreelands_terminals.inc'
 	);
-	$items['osfreelands/parcels/rent/%/%'] = array(
+	$items['freelands/parcels/rent/%/%'] = array(
     'title' => 'parcel rent callback',
     'type' => MENU_CALLBACK,
     'page callback' => 'osfreelands_rent_parcel_callback',
@@ -53,42 +53,6 @@ function osfreelands_settings() {
   $roles += user_roles(TRUE);
 
 	$form = array();
-	// password
-	$form['osfreelands_password_fieldset'] = array(
-		'#type' => 'fieldset',
-		'#title' => t('Password'),
-		'#collapsible' => FALSE,
-		'#collapsed' => FALSE,
-	);
-	$form['osfreelands_password_fieldset']['osfreelands_password'] = array(
-		'#type' => 'textfield',
-		'#title' => t('Password.'),
-		'#default_value' => variable_get('osfreelands_password', '1234'),
-		'#description' => t("Enter the password to communicate with the boxes."),
-	);
-	// fieldset
-	$form['osfreelands_parcels_fieldset'] = array(
-		'#type' => 'fieldset',
-		'#title' => t('Parcels'),
-		'#collapsible' => FALSE,
-		'#collapsed' => FALSE,
-	);
-	$form['osfreelands_parcels_fieldset']['osfreelands_max_parcels_per_user'] = array(
-		'#type' => 'textfield',
-		'#title' => t('Max parcels per user.'),
-		'#size' => 4,
-		'#maxlength' => 4,
-		'#default_value' => variable_get('osfreelands_max_parcels_per_user', 0),
-		'#description' => t("Maximum quantity of parcels a single user can own. (0 means infinite)"),
-	);
-	$form['osfreelands_parcels_fieldset']['osfreelands_renting_duration'] = array(
-		'#type' => 'textfield',
-		'#title' => t('Renting duration.'),
-		'#size' => 3,
-		'#maxlength' => 3,
-		'#default_value' => variable_get('osfreelands_renting_duration', 0),
-		'#description' => t("Renting duration in days. (0 means infinite)"),
-	);
 	// roles
 	$form['osfreelands_roles_fieldset'] = array(
 		'#type' => 'fieldset',
@@ -147,9 +111,9 @@ function osfreelands_cron() {
 			->fieldCondition('field_osfl_end_time', 'value', time(), '<=')
 			->execute();
 	if (isset($entities['node'])) {
-		foreach ($nodes_ids as $nid) {
+		foreach ($entities['node'] as $node) {
 			// get the parcel
-			$parcel = node_load($nid);
+			$parcel = node_load($node->nid);
 			$old_owner_uid = $parcel->field_osfl_parcel_owner[$parcel->language][0]['target_id'];
 			// get the terminal
 			$terminal = osfreelands_ping_terminal($parcel->field_osfl_term_nid[$parcel->language][0]['target_id']);
@@ -161,15 +125,15 @@ function osfreelands_cron() {
 			// get the url
 			$url = $terminal->field_osfl_term_url[$terminal->language][0]['value'];
 			// tell it inworld
-			$response = metaverse_framework_http_request($url . 'reset-parcel?'.urlencode($parcel->field_osfl_parcel_location[$parcel->language][0]['value']));
+			$response = metaverse_framework_http_request($url . '?q=reset-parcel&parcel='.urlencode($parcel->field_osfl_parcel_location[$parcel->language][0]['value']));
 			if ($response->success && $response->code == 200) {
 				$parcel->field_osfl_parcel_status[$parcel->language][0]['value'] = 0;
 				$parcel->field_osfl_end_time[$parcel->language][0]['value'] = NULL;
-				$parcel->field_osfl_parcel_owner[$parcel->language][0]['target_uid'] = $default_owner_uid;
+				$parcel->field_osfl_parcel_owner[$parcel->language][0]['target_id'] = $default_owner_uid;
 				node_save($parcel);
 				watchdog('freelands', 'Parcel !name expired.', array('!name' => $parcel->title), WATCHDOG_NOTICE, $link = l($parcel->title, 'node/'.$parcel->nid));
 				// get parcels owned by this user
-				$owned_parcels = osfreelands_get_parcels_by_owner_key(array('owner_key' => $old_owner));
+				$owned_parcels = osfreelands_get_parcels_by_owner_uid(array('owner_uid' => $old_owner_uid));
 				// remove the parcel role if no more parcels owned
 				if (is_null($owned_parcels)) {
 					osfreelands_remove_role($old_owner_uid, 'parcel');
@@ -243,6 +207,7 @@ function osfreelands_node_submit($node, $form, &$form_state) {
 			// set values inworld
 			$values = array(
 				'terminal_url' => $terminal->field_osfl_term_url[$terminal->language][0]['value'],
+				'terminal_password' => $terminal->field_osfl_term_pass[$terminal->language][0]['value'],
 				'parcel_location' => $form_state['values']['field_osfl_parcel_location'][$node->language][0]['value'],
 				'owner_uuid' => osfreelands_get_uuid_by_uid($form_state['values']['field_osfl_parcel_owner'][$node->language][0]['target_id'])
 			);

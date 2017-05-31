@@ -65,19 +65,35 @@ function osfreelands_save_terminal($values, $is_new = TRUE) {
 	$node->body[$node->language][0]['value'] = '';
 	$node->body[$node->language][0]['format'] = 'plain_text';
 
+	// terminal uuid
 	$node->field_osfl_term_key[$node->language][0]['uuid_field'] = $values->objectkey;
+	// terminal url
 	if (isset($values->terminal_url)) {
 		$node->field_osfl_term_url[$node->language][0]['value'] = base64_decode($values->terminal_url);
 	}
+	// owner uid
 	$node->field_osfl_term_owner[$node->language][0]['target_id'] = $values->owner_uid;
+	// default owner uid
 	$node->field_osfl_term_default_owner[$node->language][0]['target_id'] = $values->default_owner_uid;
+	// region name
 	$node->field_osfl_region_name[$node->language][0]['value'] = $values->region_name;
+	// terminal location
 	$node->field_osfl_term_location[$node->language][0]['value'] = '<'.floor($values->position_x).','.floor($values->position_y).','.floor($values->position_z).'>';
+  // password
+  $node->field_osfl_term_pass[$node->language][0]['value'] = $values->terminal_password;
+  // max_parcels_per_user
+  $node->field_osfl_max_parcels[$node->language][0]['value'] = $values->max_parcels_per_user;
+  // renting_duration
+  $node->field_osfl_rent_duration[$node->language][0]['value'] = $values->renting_duration;
+	// last online
 	if (isset($values->last_online)) {
 		$node->field_osfl_last_online[$node->language][0]['value'] = $values->last_online;
 	}
-
 	node_save($node);
+
+  // assign role to owner
+  osfreelands_set_role($values->owner_uid, 'terminal');
+
 	return $node;
 }
 
@@ -91,7 +107,7 @@ function osfreelands_update_terminal($nid) {
 	$url = $terminal->field_osfl_term_url[$terminal->language][0]['value'];
 	// get parcels list
 	$parcels_list = array();
-	$response = metaverse_framework_http_request($url . 'get-parcels-list');
+	$response = metaverse_framework_http_request($url . '/?q=get-parcels-list');
 	if ($response->success && $response->code == 200) {
 		drupal_set_message(t('Parcel list received.'));
 		$parcels_list = drupal_json_decode(base64_decode($response->data));
@@ -153,7 +169,7 @@ function osfreelands_display_update_terminal_button(&$node) {
 		$node->content['osfreelands_updater'] = array(
 			'#type' => 'link',
 			'#title' => t('Update terminal'),
-			'#href' => 'osfreelands/terminals/update/' . $node->nid,
+			'#href' => 'freelands/terminals/update/' . $node->nid,
 		);
 	}
 }
@@ -164,7 +180,7 @@ function osfreelands_display_update_terminal_button(&$node) {
 function osfreelands_inworld_save_terminal (&$sl, $args) {
 	// check if the terminal url is answering
 	if (isset($args['terminal_url'])) {
-		$response = metaverse_framework_http_request(base64_decode($args['terminal_url']). 'ping');
+		$response = metaverse_framework_http_request(base64_decode($args['terminal_url']). '/?q=ping');
 		if ($response->code != 200 || $response->data != 'pong') {
 			drupal_set_message(t('Terminal is not answering : !error ', array('!error' => $response->message)));
 			$sl->response['status'] = FALSE;
@@ -200,6 +216,9 @@ function osfreelands_inworld_save_terminal (&$sl, $args) {
 	// fill some default values
 	$sl->terminal_url = $args['terminal_url'];
 	$sl->last_online = time();
+  $sl->terminal_password = $args['terminal_password'];
+  $sl->max_parcels_per_user = $args['max_parcels_per_user'];
+  $sl->renting_duration = $args['renting_duration'];
 
 	// check if the terminal exists
 	$terminals = osfreelands_get_terminals_by_key(array('terminal_key' => $sl->objectkey));
@@ -265,7 +284,7 @@ function osfreelands_ping_terminal($terminal_nid) {
 
 function osfreelands_ping_terminal_by_url($url) {
 	// check if terminal is answering
-	$response = metaverse_framework_http_request($url . 'ping');
+	$response = metaverse_framework_http_request($url . '/?q=ping');
 	if ($response->success && $response->code == 200) {
 		if ($response->data == 'pong') {
 			$response->error_level = 'status';

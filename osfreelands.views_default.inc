@@ -25,7 +25,7 @@ function osfreelands_terminals_views() {
 	$view = new view();
 	$view->name = 'freelands_terminals';
 	$view->description = '';
-	$view->tag = 'default';
+	$view->tag = 'freelands';
 	$view->base_table = 'node';
 	$view->human_name = 'Freelands Terminals';
 	$view->core = 7;
@@ -161,7 +161,7 @@ function osfreelands_terminals_views() {
 
 	/* Display: Page */
 	$handler = $view->new_display('page', 'Page', 'page');
-	$handler->display->display_options['path'] = 'osfreelands/terminals';
+	$handler->display->display_options['path'] = 'freelands/terminals';
 	$handler->display->display_options['menu']['type'] = 'normal';
 	$handler->display->display_options['menu']['title'] = 'Freelands Terminals';
 	return $view;
@@ -171,7 +171,7 @@ function osfreelands_parcels_views() {
 	$view = new view();
 	$view->name = 'freelands_parcels';
 	$view->description = '';
-	$view->tag = 'default';
+	$view->tag = 'freelands';
 	$view->base_table = 'node';
 	$view->human_name = 'Freelands Parcels';
 	$view->core = 7;
@@ -326,7 +326,7 @@ function osfreelands_parcels_views() {
 
 	/* Display: Page */
 	$handler = $view->new_display('page', 'Page', 'page');
-	$handler->display->display_options['path'] = 'osfreelands/parcels';
+	$handler->display->display_options['path'] = 'freelands/parcels';
 	$handler->display->display_options['menu']['type'] = 'normal';
 	$handler->display->display_options['menu']['title'] = 'Freelands Parcels';
 	return $view;
@@ -470,7 +470,7 @@ function osfreelands_terminal_by_user_views() {
 
 	/* Display: Page */
 	$handler = $view->new_display('page', 'Page', 'page');
-	$handler->display->display_options['path'] = 'user/%/osfreelands/terminals';
+	$handler->display->display_options['path'] = 'user/%/freelands/terminals';
 	$handler->display->display_options['menu']['type'] = 'tab';
 	$handler->display->display_options['menu']['title'] = 'Freelands Terminals';
 	$handler->display->display_options['menu']['weight'] = '0';

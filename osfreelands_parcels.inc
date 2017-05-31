@@ -105,7 +105,7 @@ function osfreelands_save_parcel($values, $is_new = TRUE) {
 	if (isset($values->end_time)) {
 		$node->field_osfl_end_time[$node->language][0]['value'] = $values->end_time;
 	}
-	else if ($node->field_osfl_end_time[$node->language][0]['value']) {
+	else if (isset($node->field_osfl_end_time[$node->language][0]['value'])) {
 		$node->field_osfl_end_time[$node->language][0]['value'] = $node->field_osfl_end_time[$node->language][0]['value'];
 	}
 	else {
@@ -137,7 +137,7 @@ function osfreelands_display_rent_parcel_button(&$node) {
 		$node->content['osfreelands_rent_button'] = array(
 			'#type' => 'link',
 			'#title' => t('Click here to rent this parcel'),
-			'#href' => 'osfreelands/parcels/rent/' . $node->nid . '/' . $uid,
+			'#href' => 'freelands/parcels/rent/' . $node->nid . '/' . $uid,
 			'#weight' => -1
 		);
 	}
@@ -173,8 +173,10 @@ function osfreelands_check_parcel_rentable_by_uid(&$parcel, $uid) {
 			$user_parcels = osfreelands_get_parcels_by_owner_uid(array('owner_uid' => $uid));
 			$user_parcels_qty = count($user_parcels);
 			if (!is_null($user_parcels)) {
+				// get the terminal
+				$terminal = node_load($parcel->field_osfl_term_nid[$parcel->language][0]['target_id']);
 				// check if the user can rent another parcel
-				$max_allowed = variable_get('osfreelands_max_parcels_per_user', 0);
+				$max_allowed = $terminal->field_osfl_max_parcels[$terminal->language][0]['value'];
 				if ($max_allowed > 0) {
 					if (count($user_parcels) >= $max_allowed) {
 						$answer->status = 'error';
@@ -220,13 +222,14 @@ function osfreelands_rent_parcel_callback($nid, $uid) {
 	module_load_include('inc', 'osfreelands', 'osfreelands_terminals');
 	$terminal = osfreelands_ping_terminal($parcel->field_osfl_term_nid[$parcel->language][0]['target_id']);
 	if ($terminal->online_status != 'online') {
+		drupal_set_message(t('Terminal is not answering'));
 		drupal_goto('node/'.$nid);
 	}
 
 	// save the parcel
 	$parcel->parcel_owner_uid = $new_owner->uid;
 	$parcel->parcel_status = 2;
-	$renting_duration = variable_get('osfreelands_renting_duration', 0);
+	$renting_duration = $terminal->field_osfl_rent_duration[$terminal->language][0]['value'];
 	if ($renting_duration) {
 		$parcel->end_time = time() + (86400 * $renting_duration);
 	}
@@ -234,11 +237,11 @@ function osfreelands_rent_parcel_callback($nid, $uid) {
 
 	// assign role to owner
 	osfreelands_set_role($parcel->parcel_owner_uid, 'parcel');
-	// get the terminal
-	$terminal = node_load($parcel->field_osfl_term_nid[$parcel->language][0]['target_id']);
+	
 	// set values inworld
 	$values = array(
 		'terminal_url' => $terminal->field_osfl_term_url[$terminal->language][0]['value'],
+		'terminal_password' => $terminal->field_osfl_term_pass[$terminal->language][0]['value'],
 		'parcel_location' => $parcel->field_osfl_parcel_location[$parcel->language][0]['value'],
 		'owner_uuid' => osfreelands_get_uuid_by_uid($parcel->field_osfl_parcel_owner[$parcel->language][0]['target_id'])
 	);
@@ -248,13 +251,9 @@ function osfreelands_rent_parcel_callback($nid, $uid) {
 }
 
 function osfreelands_update_parcel_inworld($values) {
-	// generates the password
-	$key_given = rand(15000,50000);
-	$pass_given = md5(variable_get('osfreelands_password', '1234').':'.$key_given);
-
 	// send the info inworld
 	$url = $values['terminal_url']
-			. 'rent-parcel?' . $pass_given . '+'. $key_given . '+' . urlencode($values['parcel_location']) . '+' . $values['owner_uuid'];
+			. '?q=rent-parcel&password=' . $values['terminal_password']. '&parcel='.  urlencode($values['parcel_location']). '&owner='. $values['owner_uuid'];
 	$response = metaverse_framework_http_request($url);
 	if ($response->success && $response->code == 200) {
 		// parse infos received
@@ -284,7 +283,7 @@ function osfreelands_batch_get_parcel_infos($settings, &$context) {
 	$default_owner_uid = $settings['default_owner_uid'];
 	$default_owner_uuid = osfreelands_get_uuid_by_uid($default_owner_uid);
 	$result = "not ok";
-	$url = $terminal_url . 'get-parcel-infos?' . urlencode($parcel_location);
+	$url = $terminal_url . '/?q=get-parcel-infos&parcel=' . urlencode($parcel_location);
 
 	// get the infos inworld
 	$response = metaverse_framework_http_request($url);

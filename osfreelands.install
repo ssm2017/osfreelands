@@ -137,6 +137,19 @@ function _osfreelands_installed_fields($node_type) {
 						'max_length' => 255
 					)
 				),
+				// terminal_password
+				'osfl_term_pass' => array(
+					'field_name' => 'field_osfl_term_pass',
+					'type' => 'text',
+					'module' => 'text',
+					'active' => 1,
+					'locked' => 1,
+					'cardinality' => 1,
+					'deleted' => 0,
+					'settings' => array(
+						'max_length' => 255
+					)
+				),
 				// owner
 				'osfl_term_owner' => array(
 					'field_name' => 'field_osfl_term_owner',
@@ -190,6 +203,26 @@ function _osfreelands_installed_fields($node_type) {
 					'settings' => array(
 						'max_length' => 13
 					)
+				),
+				// max_parcels_per_user
+				'osfl_max_parcels' => array(
+					'field_name' => 'field_osfl_max_parcels',
+					'type' => 'number_integer',
+					'module' => 'number',
+					'active' => 1,
+					'locked' => 1,
+					'cardinality' => 1,
+					'deleted' => 0,
+				),
+				// renting_duration
+				'osfl_rent_duration' => array(
+					'field_name' => 'field_osfl_rent_duration',
+					'type' => 'number_integer',
+					'module' => 'number',
+					'active' => 1,
+					'locked' => 1,
+					'cardinality' => 1,
+					'deleted' => 0,
 				),
 				// last_online
 				'osfl_last_online' => array(
@@ -364,6 +397,24 @@ function _osfreelands_installed_instances($node_type) {
 						),
 					),
 				),
+				// terminal password
+				'osfl_term_pass' => array(
+					'field_name' => 'field_osfl_term_pass',
+					'label' => t('Terminal password'),
+					'required' => TRUE,
+					'widget' => array(
+						'type' => 'text_textfield',
+						'module' => 'text',
+					),
+					'display' => array(
+						'default' => array(
+							'type' => 'hidden'
+						),
+						'teaser' => array(
+							'type' => 'hidden'
+						),
+					),
+				),
 				// owner uid
 				'osfl_term_owner' => array(
 					'field_name' => 'field_osfl_term_owner',
@@ -436,6 +487,44 @@ function _osfreelands_installed_instances($node_type) {
 							'size' => 13,
 							'max_length' => 13
 						)
+					)
+				),
+				// max parcels per user
+				'osfl_max_parcels' => array(
+					'field_name' => 'field_osfl_max_parcels',
+					'label' => t('Max parcels per user'),
+					'description' => t("Maximum quantity of parcels a single user can own. (0 means infinite)"),
+					'required' => TRUE,
+					'widget' => array(
+						'type' => 'number',
+						'module' => 'number',
+						'settings' => array(
+							'size' => 5,
+							'max_length' => 5
+						)
+					),
+					'settings' => array(
+						'min' => 0,
+						'max' => 65536
+					)
+				),
+				// renting duration
+				'osfl_rent_duration' => array(
+					'field_name' => 'field_osfl_rent_duration',
+					'label' => t('Renting duration'),
+					'description' => t('Renting duration in days. (0 means infinite)'),
+					'required' => TRUE,
+					'widget' => array(
+						'type' => 'number',
+						'module' => 'number',
+						'settings' => array(
+							'size' => 3,
+							'max_length' => 3
+						)
+					),
+					'settings' => array(
+						'min' => 0,
+						'max' => 365
 					)
 				),
 				// last_online
