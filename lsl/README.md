@@ -7,17 +7,14 @@ The script is separated in few files :
     This file is receiving requests from the web site
   * osfreelands.lsl
     This file is the main running script
+  * logging.lsl
+    This file is managing text display
   * osfreelands.notecard
     This is a notecard example for the parcels config
 
 ## Installation
   * Put these scripts in a box and a notecard named "config".
   * Fill the notecard following the procedure explained later in this document.
-  * Open the script called http.lsl
-  * Add the url of your drupal website at the top of the script
-  * Set the password at the same place (the same password as defined on the drupal website)
-  * Open the script called http_in.lsl
-  * Set the password too
 
 ## Running
   * Click on the box to reset it.
@@ -34,6 +31,9 @@ The default values are set to the land when the renting is cancelled.
     This param accepts an uuid for the default owner.
   * default_title=Free Land
   * default_desc=This place is for free.
+  * terminal_password=toto
+  * max_parcels_per_user=1
+  * renting_duration=1
 
 ### Parcels
 You can add every parcel coordinates (one by line)
