@@ -1,19 +1,23 @@
-default_owner=
+// Enter a password for the terminal
+terminal_password=toto
+
+// How many parcels a single user can rent ?
+max_parcels_per_user=1
+
+// How long is the renting duration ? (in days)
+renting_duration=1
+
+// Enter the uuid of the default owner (the one that will own the parcel when the renting time is elapsed)
+default_owner=b8ed378b-c42b-49ac-9df9-61dabcd17de7
+
+// Enter the default title of the parcel (the name of the parcel after the renting time is elapsed)
 default_title=Free Land
+
+// Enter the description of the parcel (the description of the parcel after the renting time is elapsed)
 default_desc=This place is for free.
+
+// Enter the parcels to rent (one parcel per line. Enter a coordinate inside the available parcel)
 parcel=<32,32,0>
 parcel=<96,32,0>
 parcel=<160,32,0>
 parcel=<224,32,0>
-parcel=<32,96,0>
-parcel=<96,96,0>
-parcel=<160,96,0>
-parcel=<224,96,0>
-parcel=<32,160,0>
-parcel=<96,160,0>
-parcel=<160,160,0>
-parcel=<224,160,0>
-parcel=<32,224,0>
-parcel=<96,224,0>
-parcel=<160,224,0>
-parcel=<224,224,0>
