@@ -381,3 +381,7 @@ function osfreelands_get_uid_by_uuid($uuid) {
 	}
 	return $uid;
 }
+
+function osfreelands_convert_vector_to_slashes($vector) {
+	return str_replace(",", "/", substr($vector, 1, -1));
+}

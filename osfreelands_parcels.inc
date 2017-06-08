@@ -146,7 +146,17 @@ function osfreelands_display_rent_parcel_button(&$node) {
 function osfreelands_display_parcel_region_name(&$node) {
 	$terminal = node_load($node->field_osfl_term_nid[$node->language][0]['target_id']);
 	if (is_object($terminal)) {
+    // display the region name
 		$node->content['osfreelands_region_name'] = field_view_field('node', $terminal, 'field_osfl_region_name', $terminal->field_osfl_region_name[$terminal->language][0]);
+    // display the tp link
+    $node->content['osfreelands_tp_link'] = array(
+      '#markup' => '<div class="osfl-tp-link"><a href="secondlife://'.
+        $terminal->field_osfl_region_name[$terminal->language][0]['value'].'/'.
+        osfreelands_convert_vector_to_slashes($node->field_osfl_parcel_location[$node->language][0]['value']).
+        '" title="'. t('Click here to teleport to this parcel') . '">'.
+        t('Click here to teleport to this parcel').'</a>',
+      '#weight' => 0
+    );
 	}
 }
 
