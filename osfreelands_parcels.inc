@@ -226,6 +226,26 @@ function osfreelands_rent_parcel_callback($nid, $uid) {
 		drupal_goto('node/'.$nid);
 	}
 
+  // set values inworld
+  $values = array(
+    'terminal_url' => $terminal->field_osfl_term_url[$terminal->language][0]['value'],
+    'terminal_password' => $terminal->field_osfl_term_pass[$terminal->language][0]['value'],
+    'parcel_location' => $parcel->field_osfl_parcel_location[$parcel->language][0]['value'],
+    'owner_uuid' => $new_owner->uuid
+  );
+  $response = osfreelands_update_parcel_inworld($values);
+
+  if ($response != Null) {
+    if ($response->parcel_owner != $new_owner->uuid) {
+      drupal_set_message(t('Error saving parcel inworld'));
+      drupal_goto('node/'.$nid);
+    }
+  }
+  else {
+    drupal_set_message(t('Error saving parcel inworld'));
+    drupal_goto('node/'.$nid);
+  }
+
 	// save the parcel
 	$parcel->parcel_owner_uid = $new_owner->uid;
 	$parcel->parcel_status = 2;
@@ -237,16 +257,8 @@ function osfreelands_rent_parcel_callback($nid, $uid) {
 
 	// assign role to owner
 	osfreelands_set_role($parcel->parcel_owner_uid, 'parcel');
-	
-	// set values inworld
-	$values = array(
-		'terminal_url' => $terminal->field_osfl_term_url[$terminal->language][0]['value'],
-		'terminal_password' => $terminal->field_osfl_term_pass[$terminal->language][0]['value'],
-		'parcel_location' => $parcel->field_osfl_parcel_location[$parcel->language][0]['value'],
-		'owner_uuid' => osfreelands_get_uuid_by_uid($parcel->field_osfl_parcel_owner[$parcel->language][0]['target_id'])
-	);
-	osfreelands_update_parcel_inworld($values);
 
+  // return to the parcel page
 	drupal_goto('node/' . $nid);
 }
 
@@ -261,6 +273,7 @@ function osfreelands_update_parcel_inworld($values) {
 		if ($parcel_infos->parcel_owner == $values['owner_uuid']) {
 			// update the parcel
 			drupal_set_message(t('Parcel rented.'));
+      return $parcel_infos;
 		}
 		else {
 			drupal_set_message(t('There was an error when saving parcel.'), 'error');
@@ -269,6 +282,7 @@ function osfreelands_update_parcel_inworld($values) {
 	else {
 		drupal_set_message(t('Terminal error : !error', array('!error' => $response->code)), 'error');
 	}
+  return Null;
 }
 
 /* * ********************

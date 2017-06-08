@@ -200,19 +200,31 @@ function osfreelands_node_submit($node, $form, &$form_state) {
 			osfreelands_set_role($form_state['values']['field_osfl_term_owner'][$node->language][0]['target_id'], 'terminal');
 			break;
 		case 'freelands_parcel':
-			// assign role to owner
-			osfreelands_set_role($form_state['values']['field_osfl_parcel_owner'][$node->language][0]['target_id'], 'parcel');
 			// get the terminal
 			$terminal = node_load($form_state['values']['field_osfl_term_nid'][$node->language][0]['target_id']);
+			// get new owner uuid
+			$new_owner_uuid = osfreelands_get_uuid_by_uid($form_state['values']['field_osfl_parcel_owner'][$node->language][0]['target_id']);
 			// set values inworld
 			$values = array(
 				'terminal_url' => $terminal->field_osfl_term_url[$terminal->language][0]['value'],
 				'terminal_password' => $terminal->field_osfl_term_pass[$terminal->language][0]['value'],
 				'parcel_location' => $form_state['values']['field_osfl_parcel_location'][$node->language][0]['value'],
-				'owner_uuid' => osfreelands_get_uuid_by_uid($form_state['values']['field_osfl_parcel_owner'][$node->language][0]['target_id'])
+				'owner_uuid' => $new_owner_uuid
 			);
 			module_load_include('inc', 'osfreelands', 'osfreelands_parcels');
-			osfreelands_update_parcel_inworld($values);
+			$response = osfreelands_update_parcel_inworld($values);
+			if ($response != Null) {
+		    if ($response->parcel_owner != $new_owner_uuid) {
+		      drupal_set_message(t('Error saving parcel inworld'));
+		      drupal_goto('node/'.$node->nid);
+		    }
+		  }
+		  else {
+		    drupal_set_message(t('Error saving parcel inworld'));
+		    drupal_goto('node/'.$node->nid);
+		  }
+		  // assign role to owner
+			osfreelands_set_role($form_state['values']['field_osfl_parcel_owner'][$node->language][0]['target_id'], 'parcel');
 			break;
 	}
 }
