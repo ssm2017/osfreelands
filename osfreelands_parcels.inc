@@ -154,7 +154,7 @@ function osfreelands_display_parcel_region_name(&$node) {
         $terminal->field_osfl_region_name[$terminal->language][0]['value'].'/'.
         osfreelands_convert_vector_to_slashes($node->field_osfl_parcel_location[$node->language][0]['value']).
         '" title="'. t('Click here to teleport to this parcel') . '">'.
-        t('Click here to teleport to this parcel').'</a>',
+        t('Click here to teleport to this parcel').'</a></div>',
       '#weight' => 0
     );
 	}
