@@ -161,12 +161,20 @@ function osfreelands_display_parcel_region_name(&$node) {
 }
 
 function osfreelands_check_parcel_rentable_by_uid(&$parcel, $uid) {
-	$answer = new stdClass();
-	$answer->uid = $uid;
-	$answer->uuid = NULL;
-	$answer->can_rent = FALSE;
-	$answer->status = 'error';
-	$answer->message = t('This parcel is not available for renting.');
+  // fill in default values
+  $answer = new stdClass();
+  $answer->uid = $uid;
+  $answer->uuid = NULL;
+  $answer->can_rent = FALSE;
+  $answer->status = 'error';
+  $answer->message = t('This parcel is not available for renting.');
+
+  // return if the user is not logged in the website
+  if ($uid == 0) {
+    $answer->status = 'error';
+    $answer->message = t('You need to log in the website to see if you can rent this parcel.');
+    return $answer;
+  }
 
 	// check if the user is linked on the grid
 	$uuid = osfreelands_get_uuid_by_uid($uid);
